@@ -241,3 +241,5 @@ data/processed/
 *.feather
 *.arrow
 *.zarr/
+
+.DS_Store
