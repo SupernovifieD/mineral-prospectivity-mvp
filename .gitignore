@@ -209,6 +209,8 @@ __marimo__/
 # Common large geospatial files
 *.tif
 *.tiff
+archive/**/*.tif
+archive/**/*.tiff
 *.vrt
 *.img
 *.bil

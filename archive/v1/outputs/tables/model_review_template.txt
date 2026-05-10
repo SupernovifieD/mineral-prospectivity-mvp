@@ -1,0 +1,13 @@
+Model run name: random_forest_mvt_500m
+Pixel size: 500 m
+CRS: EPSG:3577
+Prospectivity map: outputs/maps/mvt_prospectivity_random_forest_500m.tif
+Top 5 percent map: outputs/maps/mvt_top_5_percent_500m.tif
+Top 5 percent threshold: 0.0683
+
+Questions to answer in QGIS:
+- Do known MVT points fall in high-score areas?
+- Are high-score areas geologically plausible?
+- Are high scores caused by data edges or NoData boundaries?
+- Which feature importances make geological sense?
+- What should be changed in the next model run?

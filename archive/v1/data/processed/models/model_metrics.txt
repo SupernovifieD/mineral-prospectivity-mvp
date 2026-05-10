@@ -1,0 +1,32 @@
+Model: RandomForestClassifier
+Selected spatial split attempt: 1
+Spatial block size m: 100000
+Train rows: 2670
+Test rows: 900
+Train positives: 63
+Test positives: 7
+ROC AUC: 0.8900
+Average precision: 0.0647
+
+              precision    recall  f1-score   support
+
+           0       0.99      1.00      1.00       893
+           1       0.00      0.00      0.00         7
+
+    accuracy                           0.99       900
+   macro avg       0.50      0.50      0.50       900
+weighted avg       0.98      0.99      0.99       900
+
+
+Feature importance:
+       feature  importance
+   dist_faults    0.160866
+     lab_depth    0.145977
+lithology_code    0.123283
+carbonate_host    0.121302
+   shape_index    0.109119
+    moho_depth    0.084734
+       mag_rtp    0.082404
+       gravity    0.077748
+   gravity_hgm    0.063980
+       mag_hgm    0.030588
