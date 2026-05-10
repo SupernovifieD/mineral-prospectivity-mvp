@@ -168,9 +168,6 @@ Your current `.venv` already has:
 - `pyogrio`
 - `pyproj`
 - `shapely`
-
-For the full Python workflow, you also need:
-
 - `rasterio`
 - `scipy`
 - `scikit-learn`
@@ -181,19 +178,6 @@ Activate the environment:
 
 ```bash
 source .venv/bin/activate
-```
-
-Install missing packages:
-
-```bash
-python -m pip install rasterio scipy scikit-learn joblib matplotlib
-```
-
-If `rasterio` fails to install on Python 3.14, use a Conda or Mamba environment with Python 3.12. Geospatial packages are often easier there:
-
-```bash
-conda create -n mvt-python python=3.12 geopandas rasterio scipy scikit-learn joblib matplotlib -c conda-forge
-conda activate mvt-python
 ```
 
 ## 6. Script Overview
