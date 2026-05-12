@@ -695,4 +695,40 @@ Can this be changed later:
 
 ## Research Decision Table
 
-Use this table as the compact checklist before starting v2. Each row should eventually have an explicit choice in the decision log.
+Use this table as the compact checklist before starting v2.
+
+### Your V2 Choices
+
+| Gate | Question | Your decision | Status | Implementation note |
+| ---: | --- | --- | --- | --- |
+| 1 | What is the purpose of the next run? | Learning workflow, screening map, and scientific benchmark. | Chosen | This is broad but workable. The benchmark/evaluation work should drive v2. |
+| 2 | Should v2 stay at Northern Territory and 500 m pixels? | Keep NT at 500 m. | Chosen | Keep `EPSG:3577` and the 500 m template unless a later run explicitly changes them. |
+| 3 | What counts as a positive MVT label? | All Australian MVT points inside NT. | Chosen | Record source rows, NT rows, and unique positive pixels after rasterization. |
+| 4 | How should unlabeled pixels be treated? | Continue with background sampling; document that background does not mean barren. | Chosen | Background pixels are unlabeled comparison samples, not proven barren locations. |
+| 4a | Should background sampling be spatially stratified? | Use spatially stratified background sampling. | Chosen | Sample background pixels across split/train spatial blocks so one region does not dominate training. |
+| 5 | What train/validation/holdout structure should be used? | Repeated spatial train/validation/holdout splits. | Chosen | Generate many candidate splits and evaluate every split that passes predefined rules. |
+| 6 | What makes a split acceptable? | Strict rules: holdout 10%, validation 10%, at least 5 holdout positives, at least 5 validation positives, at least 40 training positives, no validation/holdout overlap, no buffer. | Chosen | If too few splits pass, loosen area or positive-count constraints before changing the modeling. |
+| 7 | What shape should validation and holdout regions use? | Square blocks. | Chosen | Start with square blocks; geological regions can be a later experiment. |
+| 8 | What is allowed to influence modeling choices? | Freeze split rules before training and evaluate all accepted splits. | Chosen | Do not remove splits because of poor model performance. |
+| 9 | Which metrics will be used to judge progress? | Use the suggested default metrics. | Chosen | Use PR-AUC, top-k recall/precision, enrichment, captured positives, and ROC AUC as secondary. |
+| 10 | How should high-prospectivity zones be selected? | Top-k area thresholds: top 1%, top 5%, and top 10%. | Chosen | Thresholds should be selected/reported without using holdout to optimize them. |
+| 11 | Which predictors are allowed? | Add no new predictors until the spatial evaluation framework works; use v1 predictors first. | Chosen | This is the right sequencing. Evaluate honestly before feature expansion. |
+| 12 | Should raw x/y coordinates be model features? | Do not use coordinates in the main model. | Chosen | Coordinates remain allowed for splitting, sampling, and reporting. |
+| 13 | Which preprocessing is global GIS preprocessing vs learned ML preprocessing? | Keep preprocessing simple and avoid learned transformations until the split framework is stable. | Chosen | Alignment, clipping, and fixed GIS derivatives are acceptable globally; learned transforms must be train-only. |
+| 14 | Which model families should be compared? | Keep Random Forest as the main baseline. | Chosen | Do not add model comparison until the spatial evaluation engine works. |
+| 15 | How much hyperparameter tuning is allowed? | Use fixed Random Forest parameters. | Chosen | This keeps v2 focused on evaluation rather than tuning. |
+| 16 | Should scores be calibrated? | Do not calibrate scores for v2; use feature scaling only if the selected model requires it. | Chosen | Random Forest does not normally need feature scaling. Calibration means adjusting model scores to behave like probabilities; that is not a v2 goal. |
+| 17 | What final map should be presented? | Produce only a single model for now. | Chosen | This conflicts slightly with repeated split evaluation; repeated models can be used only for evaluation, then one final model can be trained for the map. |
+| 18 | How should uncertainty be shown? | No uncertainty map for now. | Chosen | Acceptable for v2 if the README/report clearly says uncertainty maps are deferred. |
+| 19 | How should model drivers be explained? | Use built-in Random Forest importance for now; adjust later. | Chosen with caveat | Built-in RF importance can be biased. Treat it as a quick diagnostic, not scientific evidence. |
+| 20 | What claims are allowed? | Use "prospectivity score" or "relative prospectivity ranking", not "probability of deposit". | Chosen | This is important and should be preserved in README/report language. |
+| 21 | What should be archived? | Scripts, workflow document, config, split definitions, metrics, feature importance, output tables, final maps, README excerpt, and machine-readable run config. | Chosen | Good reproducibility target for v2. |
+
+### Resolved Final Items
+
+| Topic | Final decision | Implementation note |
+| --- | --- | --- |
+| Background stratification | Use background stratification. | Sample background pixels across spatial blocks inside each training region. |
+| Spatial buffer distance | Use no buffer for v2. | Keep validation and holdout non-overlapping, but do not remove extra buffer pixels. |
+| Metrics final list | Use the suggested default metrics. | PR-AUC, top 1/5/10% recall, top 1/5/10% precision, enrichment, captured positives, and ROC AUC as secondary. |
+| Feature scaling vs calibration | If Random Forest needs feature scaling, use it; otherwise leave features unscaled. | Random Forest usually does not need scaling. Do not perform probability calibration in v2 unless it becomes a separate goal. |
