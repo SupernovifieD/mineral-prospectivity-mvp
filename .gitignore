@@ -245,3 +245,4 @@ data/processed/
 *.zarr/
 
 .DS_Store
+*.pdf
