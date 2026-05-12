@@ -129,7 +129,7 @@ Reason:
 - for example, volcanic rocks are not more similar to sedimentary rocks just because of alphabetical or numeric order;
 - binary indicators let the model treat each class as its own condition.
 
-This is directly relevant to our project because it supports treating lithology classes carefully rather than blindly using ordinal codes.
+This is directly relevant to my project because it supports treating lithology classes carefully rather than blindly using ordinal codes.
 
 ### Geochemical Processing
 

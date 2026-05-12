@@ -38,9 +38,9 @@ Options:
 - Target generation: prioritize a limited number of areas for follow-up.
 - Scientific benchmark: produce defensible model evaluation.
 
-Recommended v2 choice:
+Choice:
 
-- Scientific benchmark plus screening map.
+- Learning Workflow, screening map, and scientific benchmark.
 
 Why:
 
@@ -65,7 +65,7 @@ Options:
 - Expand beyond NT.
 - Restrict to geological subregions inside NT.
 
-Recommended v2 choice:
+Choice:
 
 - Keep NT at 500 m.
 
@@ -93,9 +93,9 @@ Options:
 - High-confidence records only.
 - Buffered occurrence zones instead of one positive pixel per point.
 
-Recommended v2 choice:
+Choice:
 
-- Start with all NT MVT occurrence pixels, but produce a count of deposits vs prospects if the source fields support it.
+- All Australian MVT points inside NT
 
 Important:
 
@@ -122,17 +122,17 @@ Options:
 - Pseudo-absence sampling: sample pixels assumed unlikely to host deposits.
 - Positive-unlabeled framing: explicitly treat unlabeled pixels as unknown.
 
-Recommended v2 choice:
+Choice:
 
 - Continue with background sampling, but document that background does not mean barren.
 
-Additional decision:
+<!-- Additional decision:
 
 - Should background sampling be spatially stratified?
 
-Recommended v2 choice:
+Choice:
 
-- Yes. Sample background across spatial blocks so one region does not dominate training.
+- Yes. Sample background across spatial blocks so one region does not dominate training. -->
 
 Record:
 
@@ -154,7 +154,7 @@ Options:
 - Repeated train/validation/holdout splits.
 - Leave-one-region-out evaluation.
 
-Recommended v2 choice:
+Choice:
 
 - Repeated spatial train/validation/holdout splits.
 
@@ -192,9 +192,15 @@ Tradeoff:
 - Stricter rules give cleaner evaluation but may produce too few valid splits.
 - Looser rules give more splits but less reliable metrics.
 
-Recommended v2 choice:
+Choice:
 
-- Start with loose but explicit rules, then report how many valid splits are found.
+- Strict rules: 
+    - Holdout area: 10% of valid pixels
+    - Validation area: 10% of valid pixels.
+    - Holdout positives: at least 5 positive pixels.
+    - Validation positives: at least 5 positive pixels.
+    - Training positives: at least 40 positive pixels.
+    - Validation and holdout do not overlap.
 
 Record:
 
@@ -219,11 +225,11 @@ Options:
 
 Recommended v2 choice:
 
-- Start with square or rectangular blocks because they are easiest to implement and audit.
+- Square blocks
 
-Future option:
+<!-- Future option:
 
-- Geological regions may be more meaningful once the basic evaluation system is stable.
+- Geological regions may be more meaningful once the basic evaluation system is stable. -->
 
 Record:
 
@@ -251,7 +257,7 @@ Not allowed:
 - Changing threshold based on holdout performance.
 - Repeatedly inspecting holdout maps to guide modeling decisions.
 
-Recommended v2 choice:
+Choice:
 
 - Freeze split rules before training and evaluate all accepted splits.
 
@@ -306,7 +312,7 @@ Options:
 - Budget-based threshold, such as top N square kilometers.
 - No binary threshold, ranking map only.
 
-Recommended v2 choice:
+Choice:
 
 - Use top-k% area thresholds first: top 1%, top 5%, and top 10%.
 
@@ -351,13 +357,9 @@ Possible v2 additions:
 - Geophysical gradients.
 - Local texture or window statistics.
 
-Decision:
+Choice:
 
-- Add no new predictors until the spatial evaluation framework works, or add a very small number of geologically justified predictors.
-
-Recommended v2 choice:
-
-- First implement evaluation using the v1 predictor set. Then add features one group at a time.
+- Add no new predictors until the spatial evaluation framework works. Implement evaluation using the v1 predictor set.
 
 Record:
 
@@ -374,7 +376,7 @@ Make this decision before model training.
 
 Decision: Should raw `x` and `y` coordinates be used as model features?
 
-Recommended v2 choice:
+Choice:
 
 - Do not use coordinates as predictors in the main model.
 
@@ -418,7 +420,7 @@ Must be fit on training only if used:
 - Calibration.
 - PCA or learned transformations.
 
-Recommended v2 choice:
+Choice:
 
 - Keep preprocessing simple and avoid learned transformations until the split framework is stable.
 
@@ -442,10 +444,9 @@ Options:
 - Gradient boosting.
 - Calibrated versions of the above.
 
-Recommended v2 choice:
+Choice:
 
 - Keep Random Forest as the main baseline.
-- Add a simple logistic regression baseline after split evaluation works.
 
 Why:
 
@@ -471,9 +472,9 @@ Options:
 - Small manual grid.
 - Automated search.
 
-Recommended v2 choice:
+Choice:
 
-- Use fixed Random Forest parameters first. Add limited validation-only tuning later.
+- Use fixed Random Forest parameters.
 
 Rule:
 
@@ -498,9 +499,9 @@ Options:
 - Platt calibration using validation.
 - Isotonic calibration using validation.
 
-Recommended v2 choice:
+Choice:
 
-- Do not calibrate initially. Report scores as relative prospectivity rankings.
+- If by calibrations you mean putting feature values within a range that can be compared later on, most certainly we need to do so.
 
 Future option:
 
@@ -528,12 +529,7 @@ Options:
 
 Recommended v2 choice:
 
-- Produce both a final single-model map and a stability/consensus map.
-
-Why:
-
-- The single model is simple.
-- The stability map shows which areas are robust across split choices.
+- Produce only a single model for now
 
 Record:
 
@@ -555,9 +551,9 @@ Options:
 - Worst-case and best-case rank maps.
 - No uncertainty map.
 
-Recommended v2 choice:
+Choice:
 
-- Top-5% selection frequency plus score standard deviation.
+- No uncertainty map for now.
 
 Record:
 
@@ -578,10 +574,9 @@ Options:
 - SHAP values.
 - Feature stability across splits.
 
-Recommended v2 choice:
+Choice:
 
-- Use permutation importance on validation first.
-- Treat built-in RF importance as secondary.
+- I don't know. We go with Built-in RF now, and later on we adjust.
 
 Why:
 
@@ -612,7 +607,7 @@ Not allowed:
 - High score means an ore deposit exists.
 - Background pixels are confirmed barren.
 
-Recommended v2 wording:
+Choice:
 
 - "Prospectivity score" or "relative prospectivity ranking", not "probability of deposit".
 
@@ -628,7 +623,7 @@ Make this decision before each major run.
 
 Decision: What should be archived?
 
-Recommended archive contents:
+Choice:
 
 - Scripts.
 - Workflow document.
@@ -637,11 +632,8 @@ Recommended archive contents:
 - Metrics.
 - Feature importance.
 - Output tables.
-- Maps if storage allows.
+- Final maps like V1.
 - README excerpt with date, time, and caveats.
-
-Recommended v2 addition:
-
 - A machine-readable run config file for CRS, pixel size, predictors, split rules, seeds, and model parameters.
 
 Record:
@@ -704,34 +696,3 @@ Can this be changed later:
 ## Research Decision Table
 
 Use this table as the compact checklist before starting v2. Each row should eventually have an explicit choice in the decision log.
-
-| # | Research decision | When to decide | Main options | Recommended starting choice | What to record |
-| ---: | --- | --- | --- | --- | --- |
-| 1 | Project objective | Before changing code or data | Learning workflow; screening map; target generation; scientific benchmark | Scientific benchmark plus screening map | Success criteria and claims that are not allowed |
-| 2 | Study area | Before generating rasters or splits | Northern Territory; larger Australia extent; smaller geological subregion | Keep Northern Territory | Boundary source, exclusions, and reason |
-| 3 | Pixel size and CRS | Before raster processing | 500 m; finer grid; coarser grid; different projected CRS | Keep 500 m in EPSG:3577 | Pixel size, CRS, template bounds, transform |
-| 4 | Positive label definition | Before split generation | All MVT records; deposits only; high-confidence labels only; buffered occurrence zones | Start with all NT MVT occurrence pixels | Source fields, row counts, unique positive pixels |
-| 5 | Label confidence handling | Before model training | Ignore confidence; manually score confidence; derive confidence from source fields | Track confidence if source fields support it, but keep v2 simple | Confidence rules and records with uncertain labels |
-| 6 | Background meaning | Before training table creation | True negatives; background/unlabeled; pseudo-absence; positive-unlabeled | Treat unlabeled pixels as background, not proven barren | Exact wording used in reports and tables |
-| 7 | Background sampling | Before training table creation | Random sample; spatially stratified sample; geology-stratified sample; all background pixels | Spatially stratified background sampling | Ratio, seed, strata, and sampling region |
-| 8 | Train/validation/holdout structure | Before model development | Train/test; train/validation/holdout; repeated spatial splits | Repeated spatial train/validation/holdout | Split structure and number of accepted splits |
-| 9 | Split geometry | Before writing split generator | Squares; rectangles; hexagons; geological regions | Start with square or rectangular blocks | Shape, size, target area, generation method |
-| 10 | Split acceptance rules | Before generating splits | Loose; moderate; strict positive and area constraints | Loose but explicit first pass | Area ranges, minimum positives, rejected split counts |
-| 11 | Spatial buffer | Before training/evaluation | No buffer; fixed km buffer; adaptive buffer | Test a modest fixed buffer if enough positives remain | Buffer distance and how buffer pixels are handled |
-| 12 | Holdout discipline | Before seeing holdout results | Tune on holdout; freeze holdout; repeated accepted holdouts | Freeze rules and evaluate all accepted holdouts | Freeze date, any accidental inspection, removals |
-| 13 | Primary metrics | Before training | Accuracy; ROC AUC; PR-AUC; top-k capture; enrichment | PR-AUC plus top-area capture/enrichment | Primary and secondary metrics with rationale |
-| 14 | Top-area thresholds | Before final reporting | Top 1%; top 5%; top 10%; fixed area budget; validation-selected cutoff | Report top 1%, 5%, and 10% | Threshold method, area selected, positives captured |
-| 15 | Predictor set | Before each run | Current v1 predictors; add geological contacts; add densities; add textures; remove weak predictors | First evaluate v1 predictors honestly | Predictor names, sources, units, transformations |
-| 16 | Categorical geology encoding | Before feature creation | Single ordinal code; binary indicators; one-hot encoding; grouped geological classes | Prefer binary/one-hot indicators for future runs | Class mapping and geological justification |
-| 17 | Coordinate use | Before training | Exclude coordinates; include coordinates; diagnostic-only coordinate model | Exclude coordinates from main model | Whether x/y were used and leakage risk |
-| 18 | Learned preprocessing | Before adding scaling/imputation/selection | Global transforms; train-only transforms; no learned transforms | Avoid learned transforms until split framework works | Fit scope, leakage risk, transformation parameters |
-| 19 | Model family | After evaluation framework exists | Random Forest; logistic regression; shallow tree; gradient boosting; CNN | Keep Random Forest and add simple baseline later | Model type, parameters, seed, training data |
-| 20 | Hyperparameter tuning | After validation split exists | Fixed parameters; small grid; automated search | Fixed RF first, limited validation-only tuning later | Search space, selected params, validation metric |
-| 21 | Calibration | After ranking metrics are stable | No calibration; Platt; isotonic | No calibration initially; scores are relative rankings | Calibration method and data used |
-| 22 | Final map strategy | After repeated split evaluation | Single final model; ensemble mean; stability map; uncertainty maps | Single model plus stability/consensus map | Final training data and map-generation recipe |
-| 23 | Uncertainty outputs | After multiple split models exist | Score std dev; top-k frequency; rank intervals; none | Top-5% frequency plus score standard deviation | Number of models and interpretation |
-| 24 | Interpretation method | After holdout evaluation | RF impurity importance; permutation importance; SHAP; feature stability | Permutation importance on validation first | Importance method, data used, geological sense-check |
-| 25 | Reporting language | Before sharing results | Probability language; prospectivity ranking; target recommendation | Use relative prospectivity ranking language | Claims, caveats, and supporting metrics |
-| 26 | Archive contents | Before each major run | Code only; code and outputs; full reproducibility package | Archive scripts, config, splits, metrics, tables, and key maps | Run ID, date/time, commit hash, seeds, outputs |
-| 27 | Next-feature timing | Before adding new predictors | Add features now; fix evaluation first; compare both | Fix spatial evaluation first | Reason for delaying or adding features |
-| 28 | External comparison | After v2 metrics exist | Compare to Lawley model; compare to geology-only baseline; no comparison | Use external prospectivity maps only for comparison, not training | Comparison source, metric, and leakage controls |
