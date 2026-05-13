@@ -427,6 +427,11 @@ check_predictor_leakage(cfg)
 
 Use the v1 script with one reporting improvement.
 
+Path:
+```text
+scripts/05_make_mvt_labels.py
+```
+
 Decision used:
 
 ```text
