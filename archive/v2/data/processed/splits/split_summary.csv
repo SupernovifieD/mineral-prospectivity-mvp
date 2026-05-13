@@ -1,0 +1,11 @@
+split_id,split_mask,holdout_candidate_id,validation_candidate_id,rule_type,uses_buffer,buffer_distance_m,train_pixels,train_positives,validation_pixels,validation_positives,holdout_pixels,holdout_positives
+1,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_001_mask.tif,1,20,strict,False,0,4474603,49,529988,16,388211,5
+2,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_002_mask.tif,1,21,strict,False,0,4465835,51,538756,14,388211,5
+3,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_003_mask.tif,1,23,strict,False,0,4465835,57,538756,8,388211,5
+4,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_004_mask.tif,1,24,strict,False,0,4476245,41,528346,24,388211,5
+5,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_005_mask.tif,1,29,fallback,False,0,4465835,61,538756,4,388211,5
+6,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_006_mask.tif,2,20,strict,False,0,4467343,42,529988,16,395471,12
+7,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_007_mask.tif,2,21,strict,False,0,4458575,44,538756,14,395471,12
+8,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_008_mask.tif,2,23,strict,False,0,4458575,50,538756,8,395471,12
+9,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_009_mask.tif,2,29,fallback,False,0,4458575,54,538756,4,395471,12
+10,/Users/yasin/mineral-prospectivity-mvp/data/processed/splits/split_010_mask.tif,3,20,strict,False,0,4471587,42,529988,16,391227,12
