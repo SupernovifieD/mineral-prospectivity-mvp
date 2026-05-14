@@ -1,0 +1,10 @@
+class_id,meaning
+0,NoData or outside NT
+1,Sedimentary_Chemical_Carbonate
+2,Sedimentary_Chemical
+3,Sedimentary_Chemical_Evaporite
+4,Sedimentary_Siliciclastic
+5,Other_Unconsolidated
+6,Igneous
+7,Metamorphic
+99,Other or unknown
