@@ -16,7 +16,34 @@ The initial goal is to perform machine learning on Australian portion of this da
 
 ## How Each Run Actually Executed
 
-### V2 (newest run, evaluation-first workflow)
+### V3 (newest run, config-and-scaling workflow)
+
+```text
+01_make_roi_and_template.py
+  -> Built NT boundary and 500 m template mask in EPSG:3577.
+02_process_continuous_rasters.py
+  -> Aligned continuous geophysics rasters to the template.
+03_process_vector_predictors.py
+  -> Built vector-derived predictors (carbonate host, lithology code, distance to faults).
+04_check_raster_stack.py
+  -> Verified predictor alignment and leakage checks before modeling.
+05_make_mvt_labels.py
+  -> Built MVT point layer and raster labels.
+06_make_spatial_splits.py
+  -> Generated repeated spatial train/validation/holdout split masks.
+07_build_split_training_samples.py
+  -> Built per-split training samples from train regions only.
+08_evaluate_random_forest_splits.py
+  -> Loaded v3 YAML run-config, enforced coordinate exclusion + StandardScaler, trained one RF per split, and scored validation/holdout.
+09_train_final_random_forest.py
+  -> Trained one final RF pipeline (same v3 config and scaling rules) for map production.
+10_predict_final_prospectivity.py
+  -> Predicted final NT prospectivity raster with the final RF pipeline.
+11_summarize_v3_outputs.py
+  -> Created top 1/5/10% maps and v3 review/output summary tables.
+```
+
+### V2 (evaluation-first workflow)
 
 ```text
 01_make_roi_and_template.py
@@ -66,4 +93,4 @@ The initial goal is to perform machine learning on Australian portion of this da
   -> Created top-5% map and output summary tables.
 ```
 
-In short: V1 was a single-split baseline flow; V2 kept most preprocessing but replaced the single model evaluation with repeated spatial split evaluation, then trained one final model for the screening map.
+In short: V1 was a single-split baseline flow; V2 kept most preprocessing but replaced the single model evaluation with repeated spatial split evaluation, then trained one final model for the screening map; V3 kept that evaluation-first structure and added a centralized YAML run-config plus mandatory feature scaling and explicit coordinate exclusion.
