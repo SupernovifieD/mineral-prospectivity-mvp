@@ -1,3 +1,15 @@
+"""Shared v3 configuration module.
+
+This file is imported by every v3 script. It centralizes:
+1) project paths and file locations,
+2) values loaded from the YAML run config,
+3) fixed workflow decisions for splitting/sampling,
+4) validation rules that keep the run scientifically consistent.
+
+Nothing in this module performs geoprocessing or modeling directly. Its job is
+to provide validated constants and helper functions.
+"""
+
 from pathlib import Path
 import re
 
@@ -34,6 +46,18 @@ NODATA_FLOAT = -9999.0
 
 
 def load_run_config(path):
+    """Load and validate the YAML run configuration as a Python dictionary.
+
+    Args:
+        path: Filesystem path to ``v3_run_config.yml``.
+
+    Returns:
+        Parsed configuration mapping.
+
+    Raises:
+        FileNotFoundError: If the config file does not exist.
+        ValueError: If the YAML content is not a mapping (dictionary-like).
+    """
     if not path.exists():
         raise FileNotFoundError(f"Missing run config: {path}")
     with open(path, "r", encoding="utf-8") as f:
@@ -43,6 +67,7 @@ def load_run_config(path):
     return cfg
 
 
+# Load run-time knobs once at import time so all scripts see the same values.
 RUN_CFG = load_run_config(RUN_CONFIG_PATH)
 
 RUN_META = RUN_CFG.get("run", {})
@@ -50,21 +75,25 @@ DATA_ROLES = RUN_CFG.get("data_roles", {})
 SCALING_CFG = RUN_CFG.get("scaling", {})
 MODEL_CFG = RUN_CFG.get("model", {})
 
+# Core run metadata.
 PROJECT_CRS = str(RUN_META.get("crs", "EPSG:3577"))
 PIXEL_SIZE = int(RUN_META.get("pixel_size_m", 500))
 RANDOM_STATE = int(RUN_META.get("random_state", 42))
 TOP_K_PCTS = [int(x) for x in RUN_META.get("top_k_pcts", [1, 5, 10])]
 
+# Feature/label role definitions from YAML.
 LABEL_COLUMN = str(DATA_ROLES.get("label_column", "label"))
 FEATURE_COLUMNS = list(DATA_ROLES.get("feature_columns", []))
 IDENTIFIER_COLUMNS = list(DATA_ROLES.get("identifier_columns", []))
 FORBIDDEN_FEATURE_PATTERNS = list(DATA_ROLES.get("forbidden_feature_patterns", []))
 
+# Scaling configuration (v3 requires scaling enabled).
 SCALING_ENABLED = bool(SCALING_CFG.get("enabled", True))
 SCALING_METHOD = str(SCALING_CFG.get("method", "standard"))
 SCALING_WITH_MEAN = bool(SCALING_CFG.get("with_mean", True))
 SCALING_WITH_STD = bool(SCALING_CFG.get("with_std", True))
 
+# Model configuration (v3 currently supports RandomForest only).
 MODEL_TYPE = str(MODEL_CFG.get("type", "random_forest"))
 MODEL_N_ESTIMATORS = int(MODEL_CFG.get("n_estimators", 500))
 MODEL_MIN_SAMPLES_LEAF = int(MODEL_CFG.get("min_samples_leaf", 2))
@@ -177,6 +206,13 @@ FINAL_PROSPECTIVITY_MAP = MAPS_DIR / "mvt_prospectivity_rf_v3_500m.tif"
 
 
 def validate_run_config():
+    """Fail fast when YAML settings violate v3 workflow rules.
+
+    The checks here protect against common mistakes:
+    - empty or duplicated feature lists,
+    - accidental inclusion of label/coordinate-like fields as features,
+    - unsupported scaling/model settings for this run version.
+    """
     if not FEATURE_COLUMNS:
         raise ValueError("Run config must define at least one feature column.")
 
@@ -213,10 +249,12 @@ def validate_run_config():
         raise ValueError("model.min_samples_leaf must be greater than zero.")
 
 
+# Validate immediately when imported so downstream scripts can assume consistency.
 validate_run_config()
 
 
 def ensure_directories():
+    """Create all expected output directories if they are missing."""
     for path in [
         CONFIGS_DIR,
         ROI_DIR,
@@ -232,6 +270,11 @@ def ensure_directories():
 
 
 def required_input_paths():
+    """Return all external/raw inputs expected by the workflow.
+
+    Returns:
+        Mapping from logical input name to filesystem path.
+    """
     paths = {
         "australia_boundary": AUSTRALIA_BOUNDARY,
         "geology": GEOLOGY,
@@ -244,4 +287,5 @@ def required_input_paths():
 
 
 def missing_required_inputs():
+    """Return only missing entries from ``required_input_paths()``."""
     return {name: path for name, path in required_input_paths().items() if not path.exists()}

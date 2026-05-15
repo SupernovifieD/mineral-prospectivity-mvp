@@ -1,3 +1,13 @@
+"""Evaluate v3 Random Forest pipeline across repeated spatial splits.
+
+For each split, this script trains on the split-specific training sample table
+then scores validation and holdout regions on full rasters. It writes:
+1) per-split metrics,
+2) aggregated metrics (mean/median/std/worst/best) by region.
+
+Important: these metrics are the scientific evidence for model behavior.
+"""
+
 import importlib.util
 import math
 from pathlib import Path
@@ -12,6 +22,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -22,6 +33,7 @@ def load_config():
 
 
 def read_predictor(cfg, name, path):
+    """Read one predictor band and normalize NoData to NaN."""
     with rasterio.open(path) as src:
         arr = src.read(1).astype("float32")
         nodata = src.nodata
@@ -32,6 +44,7 @@ def read_predictor(cfg, name, path):
 
 
 def top_k_metrics(scores, labels, pct):
+    """Compute recall/precision/enrichment for top-k% ranked pixels."""
     if len(scores) == 0:
         return {
             f"top{pct}_selected_pixels": 0,
@@ -65,6 +78,7 @@ def top_k_metrics(scores, labels, pct):
 
 
 def score_region(model, split_mask, region_value, valid_mask, usable_flat, feature_values, labels, feature_names):
+    """Score one split region (validation or holdout) using raster features."""
     region = (split_mask[valid_mask] == region_value) & usable_flat
     y = labels[valid_mask][region].astype("uint8")
     if len(y) == 0:
@@ -94,6 +108,7 @@ with rasterio.open(cfg.NT_MASK_500M) as src:
 with rasterio.open(cfg.MVT_LABELS_500M) as src:
     labels = src.read(1)
 
+# Pre-load predictor values over valid NT pixels to avoid repeated I/O per split.
 feature_values = {}
 usable_flat = np.ones(int(valid_mask.sum()), dtype=bool)
 for name in feature_names:
@@ -115,6 +130,7 @@ for split in split_summary.itertuples():
     if y_train.nunique() < 2:
         raise ValueError(f"Split {split.split_id} training data has only one class.")
 
+    # v3 enforces scaling + RF pipeline even though RF is scale-insensitive.
     model = Pipeline(
         steps=[
             (
@@ -141,6 +157,7 @@ for split in split_summary.itertuples():
     with rasterio.open(split.split_mask) as src:
         split_mask = src.read(1)
 
+    # Validation and holdout are evaluated separately for each split.
     for region_name, region_value in [("validation", 2), ("holdout", 3)]:
         scores, y = score_region(
             model,
@@ -153,6 +170,7 @@ for split in split_summary.itertuples():
             feature_names,
         )
 
+        # ROC-AUC / PR-AUC are undefined when only one class is present.
         if len(y) == 0 or len(np.unique(y)) < 2:
             roc_auc = np.nan
             average_precision = np.nan
@@ -179,6 +197,7 @@ print("Wrote:", cfg.METRICS_BY_SPLIT)
 metric_cols = [col for col in metrics.columns if col not in {"split_id", "region"}]
 aggregate_rows = []
 
+# Aggregate each metric by region to summarize split-to-split variability.
 for region, group in metrics.groupby("region"):
     for col in metric_cols:
         values = pd.to_numeric(group[col], errors="coerce")

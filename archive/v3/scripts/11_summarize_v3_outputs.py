@@ -1,3 +1,11 @@
+"""Summarize final v3 outputs into maps and review tables.
+
+This script produces:
+1) score distribution summary CSV,
+2) binary top-k area rasters (top 1/5/10%),
+3) human-readable model review text report.
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -7,6 +15,7 @@ import rasterio
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -29,6 +38,7 @@ with rasterio.open(cfg.FINAL_PROSPECTIVITY_MAP) as src:
     profile = src.profile.copy()
     nodata = src.nodata
 
+# Valid scores are finite values that are not equal to raster NoData.
 valid = np.isfinite(scores)
 if nodata is not None:
     valid &= scores != nodata
@@ -54,6 +64,7 @@ print("Wrote:", summary_path)
 
 profile.update(dtype="uint8", nodata=0, count=1, compress="lzw")
 
+# Create binary threshold maps based on fixed area percentiles.
 for pct in cfg.TOP_K_PCTS:
     threshold = float(np.percentile(valid_scores, 100 - pct))
     top = np.zeros(scores.shape, dtype="uint8")
@@ -69,6 +80,7 @@ for pct in cfg.TOP_K_PCTS:
 aggregate_metrics = pd.read_csv(cfg.AGGREGATE_METRICS)
 split_summary = pd.read_csv(cfg.SPLIT_SUMMARY) if cfg.SPLIT_SUMMARY.exists() else pd.DataFrame()
 
+# Write a plain-language review artifact for archival and quick inspection.
 report_path = cfg.TABLES_DIR / "v3_model_review.txt"
 with open(report_path, "w", encoding="utf-8") as f:
     f.write("Run: NT MVT v3 Random Forest baseline\n")

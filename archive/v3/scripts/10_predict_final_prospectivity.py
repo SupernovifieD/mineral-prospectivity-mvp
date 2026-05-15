@@ -1,3 +1,12 @@
+"""Predict final NT prospectivity map from the trained v3 pipeline.
+
+Workflow:
+1) load final scaler+RF model,
+2) assemble feature matrix from aligned predictor rasters,
+3) score usable pixels in chunks,
+4) write float32 prospectivity raster.
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -8,6 +17,7 @@ import rasterio
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -18,6 +28,7 @@ def load_config():
 
 
 def read_predictor(cfg, name, path):
+    """Read one predictor band and normalize NoData to NaN."""
     with rasterio.open(path) as src:
         arr = src.read(1).astype("float32")
         nodata = src.nodata
@@ -38,6 +49,7 @@ if not cfg.NT_MASK_500M.exists():
 feature_names = cfg.FEATURE_COLUMNS
 model = joblib.load(cfg.FINAL_RANDOM_FOREST_MODEL)
 
+# Defensive check: ensure config feature order matches model training order.
 trained_features = None
 if hasattr(model, "feature_names_in_"):
     trained_features = list(model.feature_names_in_)
@@ -60,6 +72,7 @@ valid_mask = mask == 1
 valid_rows, valid_cols = np.where(valid_mask)
 feature_columns = []
 
+# Build model matrix in config-defined column order.
 for name in feature_names:
     path = cfg.PREDICTOR_RASTERS[name]
     if not path.exists():
@@ -78,6 +91,7 @@ if len(usable_indices) == 0:
     raise ValueError("No usable pixels remain after removing predictor NoData.")
 
 scores = np.full(X.shape[0], cfg.NODATA_FLOAT, dtype="float32")
+# Chunking keeps memory stable on large rasters.
 chunk_size = 200_000
 
 for start in range(0, len(usable_indices), chunk_size):

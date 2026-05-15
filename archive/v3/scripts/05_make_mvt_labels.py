@@ -1,3 +1,10 @@
+"""Create MVT point layer and binary label raster for NT.
+
+The label raster is the target used by modeling:
+- 1 = pixel containing at least one known MVT point,
+- 0 = all other pixels (background/unlabeled).
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -9,6 +16,7 @@ from rasterio.transform import rowcol
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -26,6 +34,7 @@ if not cfg.OCCURRENCES.exists():
 if not cfg.NT_BOUNDARY_3577.exists() or not cfg.NT_MASK_500M.exists():
     raise FileNotFoundError("Missing ROI outputs. Run script 01 first.")
 
+# Read occurrence catalog and keep only Australian MVT records.
 df = pd.read_csv(cfg.OCCURRENCES, encoding="latin1")
 print("Occurrence rows:", len(df))
 
@@ -52,6 +61,7 @@ points = gpd.GeoDataFrame(
 )
 points = points.to_crs(cfg.PROJECT_CRS)
 
+# Spatially filter points to the NT ROI in project CRS.
 nt = gpd.read_file(cfg.NT_BOUNDARY_3577).to_crs(cfg.PROJECT_CRS)
 points_nt = gpd.sjoin(points, nt[["geometry"]], predicate="intersects", how="inner")
 points_nt = points_nt.drop(columns=["index_right"])
@@ -76,6 +86,7 @@ xs = points_nt.geometry.x.to_numpy()
 ys = points_nt.geometry.y.to_numpy()
 rows, cols = rowcol(transform, xs, ys)
 
+# Mark every in-bounds NT pixel containing at least one MVT point as positive.
 for row, col in zip(rows, cols):
     if 0 <= row < label.shape[0] and 0 <= col < label.shape[1]:
         if mask[row, col] == 1:
@@ -92,4 +103,5 @@ with rasterio.open(cfg.MVT_LABELS_500M, "w", **profile) as dst:
 
 print("Wrote:", cfg.MVT_LABELS_500M)
 print("Positive label pixels:", positive_pixels)
+# Difference > 0 means multiple points collapsed into shared pixels at 500 m.
 print("Point rows sharing pixels:", len(points_nt) - positive_pixels)

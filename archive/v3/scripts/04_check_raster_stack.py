@@ -1,3 +1,11 @@
+"""Validate predictor stack integrity before modeling.
+
+Checks performed:
+1) leakage guard on predictor names/paths,
+2) existence of all configured feature rasters,
+3) exact alignment against the NT template (CRS, transform, width, height).
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -5,6 +13,7 @@ import rasterio
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -15,6 +24,11 @@ def load_config():
 
 
 def check_predictor_leakage(cfg):
+    """Detect obvious leakage keywords in configured predictors.
+
+    This is a defensive string-based check. It cannot prove zero leakage, but
+    it catches common configuration mistakes early.
+    """
     forbidden_terms = [
         "mvt_label",
         "mvt_labels",
@@ -52,6 +66,7 @@ cfg = load_config()
 check_predictor_leakage(cfg)
 feature_names = cfg.FEATURE_COLUMNS
 
+# Template acts as the single alignment reference for all predictors.
 if not cfg.NT_MASK_500M.exists():
     raise FileNotFoundError(f"Missing template mask. Run script 01 first: {cfg.NT_MASK_500M}")
 
@@ -69,6 +84,7 @@ print()
 
 errors = []
 
+# Validate only active features listed in YAML (not every file on disk).
 for name in feature_names:
     path = cfg.PREDICTOR_RASTERS[name]
     print(name)
@@ -86,6 +102,7 @@ for name in feature_names:
         print("  pixel size:", src.transform.a, src.transform.e)
         print("  nodata:", src.nodata)
 
+        # All four properties must match exactly for pixel-perfect stacking.
         same = (
             src.crs == ref_crs
             and src.transform == ref_transform

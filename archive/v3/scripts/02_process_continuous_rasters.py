@@ -1,3 +1,11 @@
+"""Align continuous predictor rasters to the NT 500 m template.
+
+For each configured continuous raster, this script:
+1) reprojects/resamples to template CRS/grid,
+2) applies the NT mask,
+3) writes a float32 500 m raster with consistent NoData handling.
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -8,6 +16,7 @@ from rasterio.warp import reproject
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -20,6 +29,7 @@ def load_config():
 cfg = load_config()
 cfg.ensure_directories()
 
+# The template created in script 01 defines shape, transform, and CRS.
 if not cfg.NT_MASK_500M.exists():
     raise FileNotFoundError(f"Missing template mask. Run script 01 first: {cfg.NT_MASK_500M}")
 
@@ -42,11 +52,18 @@ with rasterio.open(cfg.NT_MASK_500M) as mask_src:
 
 
 def process_one_raster(name, src_path):
+    """Process one continuous raster into the template grid.
+
+    Args:
+        name: Predictor key used for output naming.
+        src_path: Input raster path.
+    """
     out_path = cfg.RASTERS_500M_DIR / f"{name}_500m.tif"
     print("Processing:", name)
     print("  Input:", src_path)
     print("  Output:", out_path)
 
+    # Start with all pixels as NoData; reproject fills valid overlap.
     destination = np.full(
         (template_height, template_width),
         cfg.NODATA_FLOAT,
@@ -62,6 +79,7 @@ def process_one_raster(name, src_path):
             source_crs = cfg.SOURCE_CRS
             print("  Source CRS missing, assuming:", source_crs)
 
+        # Bilinear interpolation is used because predictors are continuous.
         reproject(
             source=rasterio.band(src, 1),
             destination=destination,
@@ -74,6 +92,7 @@ def process_one_raster(name, src_path):
             resampling=Resampling.bilinear,
         )
 
+    # Force non-finite values to NoData and remove anything outside NT.
     destination[~np.isfinite(destination)] = cfg.NODATA_FLOAT
     destination[nt_mask != 1] = cfg.NODATA_FLOAT
 

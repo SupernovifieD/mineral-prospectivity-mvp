@@ -1,3 +1,15 @@
+"""Build repeated spatial train/validation/holdout split masks.
+
+This script searches candidate square blocks over the NT grid and assembles
+non-overlapping validation/holdout pairs that satisfy v3 split constraints.
+
+Mask encoding:
+- 1 = train region
+- 2 = validation region
+- 3 = holdout region
+- 0 = outside NT
+"""
+
 import importlib.util
 import math
 from pathlib import Path
@@ -8,6 +20,7 @@ import rasterio
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -18,12 +31,14 @@ def load_config():
 
 
 def block_slices(height, width, side, step):
+    """Yield moving square windows across the raster grid."""
     for row0 in range(0, max(1, height - side + 1), step):
         for col0 in range(0, max(1, width - side + 1), step):
             yield row0, col0, row0 + side, col0 + side
 
 
 def make_block_mask(shape, window):
+    """Convert a window tuple into a boolean mask."""
     row0, col0, row1, col1 = window
     block = np.zeros(shape, dtype=bool)
     block[row0:row1, col0:col1] = True
@@ -31,6 +46,7 @@ def make_block_mask(shape, window):
 
 
 def summarize_region(name, region, valid, labels):
+    """Count valid pixels and positives for one split region."""
     valid_region = region & valid
     return {
         f"{name}_pixels": int(valid_region.sum()),
@@ -39,6 +55,7 @@ def summarize_region(name, region, valid, labels):
 
 
 def area_matches_strict(area_share, target):
+    """Return True when candidate area is within strict tolerance."""
     return abs(area_share - target) <= 0.03
 
 
@@ -55,6 +72,7 @@ with rasterio.open(cfg.NT_MASK_500M) as src:
 with rasterio.open(cfg.MVT_LABELS_500M) as src:
     labels = src.read(1)
 
+# Work only on valid NT pixels.
 valid = nt_mask == 1
 valid_pixels = int(valid.sum())
 total_positives = int((labels[valid] == 1).sum())
@@ -64,6 +82,7 @@ if total_positives == 0:
 
 height, width = valid.shape
 target_block_pixels = max(1, int(valid_pixels * cfg.STRICT_HOLDOUT_AREA))
+# Approximate a square whose area is close to target holdout share.
 side = int(round(math.sqrt(target_block_pixels)))
 side = max(8, min(side, height, width))
 step = max(1, side // 3)
@@ -74,6 +93,7 @@ print("Candidate square side in pixels:", side)
 print("Candidate step in pixels:", step)
 
 candidate_blocks = []
+# Scan many candidate windows and retain those intersecting the valid ROI.
 for idx, window in enumerate(block_slices(height, width, side, step)):
     block = make_block_mask(valid.shape, window)
     block_valid = block & valid
@@ -97,6 +117,7 @@ print("Candidate blocks:", len(candidate_blocks))
 accepted = []
 split_id = 1
 
+# Pair one holdout block with one non-overlapping validation block.
 for holdout in candidate_blocks:
     holdout_block = make_block_mask(valid.shape, holdout["window"]) & valid
     strict_holdout_ok = (
@@ -107,6 +128,7 @@ for holdout in candidate_blocks:
         cfg.FALLBACK_AREA_MIN <= holdout["area_share"] <= cfg.FALLBACK_AREA_MAX
         and holdout["positives"] >= cfg.FALLBACK_MIN_POSITIVES
     )
+    # Candidate must satisfy either strict rules or fallback rules.
     if not (strict_holdout_ok or fallback_holdout_ok):
         continue
 
@@ -115,6 +137,7 @@ for holdout in candidate_blocks:
             continue
 
         validation_block = make_block_mask(valid.shape, validation["window"]) & valid
+        # Enforce spatial disjointness between validation and holdout areas.
         if np.any(validation_block & holdout_block):
             continue
 
@@ -134,6 +157,7 @@ for holdout in candidate_blocks:
         if train_positives < cfg.STRICT_MIN_TRAIN_POSITIVES:
             continue
 
+        # Encode region roles in one compact mask raster.
         split_mask = np.zeros(valid.shape, dtype="uint8")
         split_mask[train_region] = 1
         split_mask[validation_block] = 2

@@ -1,3 +1,14 @@
+"""Build per-split training sample tables from train regions only.
+
+For each accepted split:
+1) keep train-region pixels only,
+2) keep usable pixels (all feature values present),
+3) include all train positives,
+4) sample stratified background at the configured ratio.
+
+Output is one combined CSV with metadata columns needed for traceability.
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -7,6 +18,7 @@ import rasterio
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -17,6 +29,7 @@ def load_config():
 
 
 def read_predictor(cfg, name, path):
+    """Read one predictor band and normalize NoData to NaN."""
     with rasterio.open(path) as src:
         arr = src.read(1).astype("float32")
         nodata = src.nodata
@@ -28,12 +41,14 @@ def read_predictor(cfg, name, path):
 
 
 def spatial_block_ids(rows, cols, block_size_pixels=100):
+    """Assign each sample to a coarse spatial block ID."""
     block_rows = pd.Series((rows // block_size_pixels).astype(int)).astype(str)
     block_cols = pd.Series((cols // block_size_pixels).astype(int)).astype(str)
     return block_rows + "_" + block_cols
 
 
 def stratified_background_sample(candidate_idx, rows, cols, n_needed, seed):
+    """Sample background indices while spreading picks across spatial blocks."""
     if n_needed >= len(candidate_idx):
         return candidate_idx
 
@@ -83,6 +98,7 @@ with rasterio.open(cfg.NT_MASK_500M) as src:
 with rasterio.open(cfg.MVT_LABELS_500M) as src:
     labels = src.read(1)
 
+# Flatten NT-valid pixels to a table-like index space.
 valid_mask = mask == 1
 rows, cols = np.where(valid_mask)
 flat_labels = labels[valid_mask].astype("uint8")
@@ -99,6 +115,7 @@ for name in feature_names:
         raise ValueError(f"Predictor shape does not match NT mask: {name}")
     values = arr[valid_mask]
     feature_values[name] = values
+    # A row is usable only if every active feature is present.
     usable &= ~np.isnan(values)
 
 all_records = []
@@ -108,6 +125,7 @@ for split in split_summary.itertuples():
         split_mask = src.read(1)
 
     train_flat = split_mask[valid_mask] == 1
+    # Positives are all included; background is sampled to control class ratio.
     positive_idx = np.where(train_flat & usable & (flat_labels == 1))[0]
     background_idx = np.where(train_flat & usable & (flat_labels == 0))[0]
 

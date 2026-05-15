@@ -1,3 +1,12 @@
+"""Train the final v3 Random Forest pipeline for map production.
+
+This script does NOT produce scientific holdout evidence. Instead it:
+1) builds one final training table from all usable NT pixels,
+2) samples background with spatial stratification,
+3) trains the configured scaler+RF pipeline,
+4) writes model artifact and feature-importance table.
+"""
+
 import importlib.util
 from pathlib import Path
 
@@ -11,6 +20,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 def load_config():
+    """Import ``00_config.py`` dynamically and return it as a module object."""
     config_path = Path(__file__).resolve().parent / "00_config.py"
     spec = importlib.util.spec_from_file_location("config", config_path)
     if spec is None or spec.loader is None:
@@ -21,6 +31,7 @@ def load_config():
 
 
 def read_predictor(cfg, name, path):
+    """Read one predictor band and normalize NoData to NaN."""
     with rasterio.open(path) as src:
         arr = src.read(1).astype("float32")
         nodata = src.nodata
@@ -31,12 +42,14 @@ def read_predictor(cfg, name, path):
 
 
 def spatial_block_ids(rows, cols, block_size_pixels=100):
+    """Assign each sample to a coarse spatial block ID."""
     block_rows = pd.Series((rows // block_size_pixels).astype(int)).astype(str)
     block_cols = pd.Series((cols // block_size_pixels).astype(int)).astype(str)
     return block_rows + "_" + block_cols
 
 
 def stratified_background_sample(candidate_idx, rows, cols, n_needed, seed):
+    """Sample background indices while spreading picks across spatial blocks."""
     if n_needed >= len(candidate_idx):
         return candidate_idx
 
@@ -81,6 +94,7 @@ with rasterio.open(cfg.NT_MASK_500M) as src:
 with rasterio.open(cfg.MVT_LABELS_500M) as src:
     labels = src.read(1)
 
+# Flatten valid NT pixels and collect feature vectors.
 valid_mask = mask == 1
 rows, cols = np.where(valid_mask)
 flat_labels = labels[valid_mask].astype("uint8")
@@ -99,6 +113,7 @@ for name in feature_names:
     feature_values[name] = values
     usable &= ~np.isnan(values)
 
+# Final training uses all positives and sampled background from usable pixels.
 positive_idx = np.where(usable & (flat_labels == 1))[0]
 background_idx = np.where(usable & (flat_labels == 0))[0]
 
@@ -131,6 +146,7 @@ training["col"] = cols[selected]
 training.to_csv(cfg.FINAL_TRAINING_TABLE, index=False)
 print("Wrote:", cfg.FINAL_TRAINING_TABLE)
 
+# Keep model recipe aligned with split-evaluation recipe (scaler + RF).
 model = Pipeline(
     steps=[
         (
@@ -157,6 +173,7 @@ joblib.dump(model, cfg.FINAL_RANDOM_FOREST_MODEL)
 print("Wrote:", cfg.FINAL_RANDOM_FOREST_MODEL)
 
 rf_model = model.named_steps["rf"]
+# Feature importance is impurity-based RF importance (not causal effect).
 importance = pd.DataFrame(
     {
         "feature": feature_names,
