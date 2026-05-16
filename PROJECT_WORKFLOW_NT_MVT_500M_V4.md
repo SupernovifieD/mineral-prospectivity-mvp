@@ -34,7 +34,7 @@ These decisions come from `DECISIONS_TO_MAKE_V4.md` (user-filled choices).
 | Aggregate policy | Aggregate only original splits (`G9: B`) |
 | Spatial buffer | 10 km buffer (`G10: D`) |
 | Split positive thresholds | Lowered to `3 / 3 / 30` (holdout / validation / train) (`G11`) |
-| Background sampling plan | Compare two settings: 25:1 and 50:1 (`G12: D, 25 and 50`) |
+| Background sampling plan | Fixed 50:1 spatially stratified background sampling (`G12: A`) |
 | Lithology encoding | One-hot lithology features (`G13: B`) |
 | LAB depth | Keep feature in v4 (`G14: A`) |
 | Model family | Random Forest only (`G15: A`) |
@@ -60,7 +60,7 @@ Raw GIS data
   -> YAML run-config load and validation
   -> Python raster stack and leakage checks
   -> Python zone-diverse spatial split masks with 10 km buffer
-  -> Python split training samples (two sampling ratios: 25 and 50)
+  -> Python split training samples (50:1 background-per-positive)
   -> Python fixed Random Forest evaluation across accepted original splits
   -> Python per-location and aggregate metrics + mandatory gap diagnostics
   -> Python final Random Forest screening model
@@ -84,8 +84,6 @@ Use this active-run layout in project root:
 ```text
 configs/
   v4_run_config.yml
-  v4_run_config_ratio25.yml
-  v4_run_config_ratio50.yml
 scripts/
   00_config.py
   01_make_roi_and_template.py
@@ -159,16 +157,8 @@ python scripts/03_process_vector_predictors.py
 python scripts/04_check_raster_stack.py
 python scripts/05_make_mvt_labels.py
 python scripts/06_make_spatial_splits.py
-
-# Ratio 25 run
-python scripts/07_build_split_training_samples.py --config configs/v4_run_config_ratio25.yml
-python scripts/08_evaluate_random_forest_splits.py --config configs/v4_run_config_ratio25.yml
-
-# Ratio 50 run
-python scripts/07_build_split_training_samples.py --config configs/v4_run_config_ratio50.yml
-python scripts/08_evaluate_random_forest_splits.py --config configs/v4_run_config_ratio50.yml
-
-# Choose winning ratio, then produce final map with chosen config
+python scripts/07_build_split_training_samples.py --config configs/v4_run_config.yml
+python scripts/08_evaluate_random_forest_splits.py --config configs/v4_run_config.yml
 python scripts/09_train_final_random_forest.py --config configs/v4_run_config.yml
 python scripts/10_predict_final_prospectivity.py --config configs/v4_run_config.yml
 python scripts/11_summarize_v4_outputs.py --config configs/v4_run_config.yml
@@ -204,7 +194,7 @@ scaling:
   with_std: true
 
 sampling:
-  background_per_positive: 25
+  background_per_positive: 50
   use_spatially_stratified_background: true
   background_block_size_pixels: 100
 
@@ -303,7 +293,7 @@ Output requirements:
 ### 07_build_split_training_samples.py
 
 - Reuse v3 logic.
-- Run once per sampling ratio (25 and 50) using config.
+- Run with fixed v4 sampling settings from config (`background_per_positive: 50`).
 
 ### 08_evaluate_random_forest_splits.py
 
@@ -320,7 +310,7 @@ Output requirements:
 
 ### 09_train_final_random_forest.py
 
-- Same as v3 with selected winning sampling ratio config.
+- Same as v3 with fixed v4 sampling settings from config.
 - Keep warning that this is map-production model, not holdout evidence.
 
 ### 10_predict_final_prospectivity.py
@@ -348,17 +338,15 @@ Add reproducibility artifact:
 - checksums for key inputs/outputs
 - relative paths for key artifacts
 
-## 8. Comparison Plan for G12 (25 vs 50)
+## 8. Background Sampling Plan (G12)
 
-Use identical split masks for fair comparison.
+Use one fixed setting in v4:
 
-Protocol:
+1. `background_per_positive = 50`
+2. `use_spatially_stratified_background = true`
+3. keep split masks unchanged for all model/evaluation runs
 
-1. run script 06 once
-2. run 07+08 with ratio 25
-3. run 07+08 with ratio 50
-4. compare holdout metrics (median AP, top-5 recall, variability)
-5. freeze one ratio for scripts 09-11
+If you run a future sensitivity test, do it as a separate run label and never mix metrics from different sampling ratios in one aggregate table.
 
 ## 9. Non-Goals in V4
 
@@ -379,7 +367,7 @@ V4 is considered successful when:
 3. buffer distance is 10 km in split artifacts
 4. split counts meet non-exploratory threshold, or run is clearly labeled exploratory
 5. gap diagnostics are reported automatically every run
-6. ratio comparison (25 vs 50) is completed and documented
+6. background sampling ratio is fixed at 50 and documented in config + review report
 7. all artifacts are reproducible using manifest + relative paths
 
 ## 11. Claims Language (Mandatory)
@@ -390,4 +378,3 @@ Use this language in all v4 outputs:
 Scores are relative prospectivity rankings, not calibrated deposit probabilities.
 Holdout evidence comes from split evaluation, not from the final production model.
 ```
-
