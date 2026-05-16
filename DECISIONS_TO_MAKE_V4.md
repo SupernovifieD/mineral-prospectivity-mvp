@@ -31,7 +31,7 @@ Use this before implementing v4 scripts. Fill the `Your choice` column and freez
 | G9 | Aggregation policy for swapped splits | swapped are not independent and must not enter main aggregates (`SF`) | A) aggregate all splits B) aggregate originals only | B | `[ B ]` |
 | G10 | Spatial buffer between train and eval | no buffer likely over-optimistic near boundaries (`MR`, `VG`) | A) no buffer B) 2 km C) 5 km D) 10 km | C (5 km) initial; test D in sensitivity | `[ D ]` |
 | G11 | Split acceptance thresholds | current minimum positives too low for stable metrics (`MR`, `VG`) | A) keep 5/5/40 B) raise holdout min C) raise both val+holdout mins | B or C (target holdout >= 8) | `[ Lower to 3/3/30 ]` |
-| G12 | Background sampling design | class imbalance and sampling policy affect robustness (`MR`) | A) 50:1 stratified B) 25:1 C) 100:1 D) compare multiple | D (compare at least two ratios) | `[ ]` |
+| G12 | Background sampling design | class imbalance and sampling policy affect robustness (`MR`) | A) 50:1 stratified B) 25:1 C) 100:1 D) compare multiple | D (compare at least two ratios) | `[ D 25 and 50 ]` |
 | G13 | Lithology encoding | ordinal lithology code may create false ordering (`MR`) | A) keep ordinal `lithology_code` B) one-hot lithology classes | B | `[ B ]` |
 | G14 | LAB depth feature policy | geological relevance is uncertain for shallow MVT processes (`MR`) | A) keep as-is B) remove C) run ablation and decide | C | `[ A ]` |
 | G15 | Model family for v4 | avoid complexity before evaluation is fixed (`MR`) | A) RF only B) RF + one comparator model | B (RF baseline + one comparator) | `[ A ]` |
