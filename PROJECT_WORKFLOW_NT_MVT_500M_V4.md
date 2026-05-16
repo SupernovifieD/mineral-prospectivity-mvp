@@ -157,15 +157,13 @@ python scripts/03_process_vector_predictors.py
 python scripts/04_check_raster_stack.py
 python scripts/05_make_mvt_labels.py
 python scripts/06_make_spatial_splits.py
-python scripts/07_build_split_training_samples.py --config configs/v4_run_config.yml
-python scripts/08_evaluate_random_forest_splits.py --config configs/v4_run_config.yml
-python scripts/09_train_final_random_forest.py --config configs/v4_run_config.yml
-python scripts/10_predict_final_prospectivity.py --config configs/v4_run_config.yml
-python scripts/11_summarize_v4_outputs.py --config configs/v4_run_config.yml
-python scripts/12_write_run_manifest.py --config configs/v4_run_config.yml
+python scripts/07_build_split_training_samples.py
+python scripts/08_evaluate_random_forest_splits.py
+python scripts/09_train_final_random_forest.py
+python scripts/10_predict_final_prospectivity.py
+python scripts/11_summarize_v4_outputs.py
+python scripts/12_write_run_manifest.py
 ```
-
-If CLI `--config` is not implemented yet, use one config filename at a time and keep filenames explicit.
 
 ## 6. Script 00: Shared Config + YAML Contract
 
