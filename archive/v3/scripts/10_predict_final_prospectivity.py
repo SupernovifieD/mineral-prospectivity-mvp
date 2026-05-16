@@ -92,7 +92,7 @@ if len(usable_indices) == 0:
 
 scores = np.full(X.shape[0], cfg.NODATA_FLOAT, dtype="float32")
 # Chunking keeps memory stable on large rasters.
-chunk_size = 200_000
+chunk_size = cfg.PREDICTION_CHUNK_SIZE
 
 for start in range(0, len(usable_indices), chunk_size):
     end = start + chunk_size

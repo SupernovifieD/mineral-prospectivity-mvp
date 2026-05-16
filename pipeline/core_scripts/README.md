@@ -33,3 +33,13 @@ Copying keeps each run reproducible while this directory stays as your clean bas
 - Do not edit archived scripts in `archive/v*/scripts` for future workflow evolution.
 - Evolve the baseline here, then copy into new run directories.
 
+## YAML Knobs Moved Out Of Code
+
+The core config now reads these values from your run YAML:
+
+- `sampling.background_per_positive`
+- `sampling.use_spatially_stratified_background`
+- `sampling.background_block_size_pixels`
+- `prediction.chunk_size_pixels`
+
+If omitted, safe defaults are applied.

@@ -38,6 +38,14 @@ scaling:
   with_mean: true
   with_std: true
 
+sampling:
+  background_per_positive: 50
+  use_spatially_stratified_background: true
+  background_block_size_pixels: 100
+
+prediction:
+  chunk_size_pixels: 200000
+
 model:
   type: random_forest
   n_estimators: 500

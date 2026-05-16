@@ -41,20 +41,24 @@ def read_predictor(cfg, name, path):
     return arr
 
 
-def spatial_block_ids(rows, cols, block_size_pixels=100):
+def spatial_block_ids(rows, cols, block_size_pixels):
     """Assign each sample to a coarse spatial block ID."""
     block_rows = pd.Series((rows // block_size_pixels).astype(int)).astype(str)
     block_cols = pd.Series((cols // block_size_pixels).astype(int)).astype(str)
     return block_rows + "_" + block_cols
 
 
-def stratified_background_sample(candidate_idx, rows, cols, n_needed, seed):
+def stratified_background_sample(candidate_idx, rows, cols, n_needed, seed, block_size_pixels):
     """Sample background indices while spreading picks across spatial blocks."""
     if n_needed >= len(candidate_idx):
         return candidate_idx
 
     rng = np.random.default_rng(seed)
-    block_ids = spatial_block_ids(rows[candidate_idx], cols[candidate_idx])
+    block_ids = spatial_block_ids(
+        rows[candidate_idx],
+        cols[candidate_idx],
+        block_size_pixels=block_size_pixels,
+    )
     groups = pd.Series(candidate_idx).groupby(block_ids)
     group_values = [group.to_numpy() for _, group in groups]
 
@@ -123,13 +127,18 @@ if len(background_idx) == 0:
     raise ValueError("No usable background pixels found.")
 
 n_background = min(len(background_idx), len(positive_idx) * cfg.BACKGROUND_PER_POSITIVE)
-sampled_background = stratified_background_sample(
-    background_idx,
-    rows,
-    cols,
-    n_background,
-    seed=cfg.RANDOM_STATE,
-)
+if cfg.USE_SPATIALLY_STRATIFIED_BACKGROUND:
+    sampled_background = stratified_background_sample(
+        background_idx,
+        rows,
+        cols,
+        n_background,
+        seed=cfg.RANDOM_STATE,
+        block_size_pixels=cfg.BACKGROUND_BLOCK_SIZE_PIXELS,
+    )
+else:
+    rng = np.random.default_rng(cfg.RANDOM_STATE)
+    sampled_background = rng.choice(background_idx, size=n_background, replace=False)
 
 selected = np.concatenate([positive_idx, sampled_background])
 rng = np.random.default_rng(cfg.RANDOM_STATE)

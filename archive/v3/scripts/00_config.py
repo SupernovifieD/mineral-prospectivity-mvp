@@ -73,6 +73,8 @@ RUN_CFG = load_run_config(RUN_CONFIG_PATH)
 RUN_META = RUN_CFG.get("run", {})
 DATA_ROLES = RUN_CFG.get("data_roles", {})
 SCALING_CFG = RUN_CFG.get("scaling", {})
+SAMPLING_CFG = RUN_CFG.get("sampling", {})
+PREDICTION_CFG = RUN_CFG.get("prediction", {})
 MODEL_CFG = RUN_CFG.get("model", {})
 
 # Core run metadata.
@@ -100,9 +102,15 @@ MODEL_MIN_SAMPLES_LEAF = int(MODEL_CFG.get("min_samples_leaf", 2))
 MODEL_CLASS_WEIGHT = MODEL_CFG.get("class_weight", "balanced")
 MODEL_N_JOBS = int(MODEL_CFG.get("n_jobs", -1))
 
-# V2/V3 split and sampling decisions from DECISIONS_TO_MAKE.md.
-BACKGROUND_PER_POSITIVE = 50
-USE_SPATIALLY_STRATIFIED_BACKGROUND = True
+# Sampling and prediction runtime knobs.
+BACKGROUND_PER_POSITIVE = int(SAMPLING_CFG.get("background_per_positive", 50))
+USE_SPATIALLY_STRATIFIED_BACKGROUND = bool(
+    SAMPLING_CFG.get("use_spatially_stratified_background", True)
+)
+BACKGROUND_BLOCK_SIZE_PIXELS = int(SAMPLING_CFG.get("background_block_size_pixels", 100))
+PREDICTION_CHUNK_SIZE = int(PREDICTION_CFG.get("chunk_size_pixels", 200_000))
+
+# V2/V3 split decisions from DECISIONS_TO_MAKE.md.
 USE_SPATIAL_BUFFER = False
 BUFFER_DISTANCE_M = 0
 
@@ -247,6 +255,12 @@ def validate_run_config():
         raise ValueError("model.n_estimators must be greater than zero.")
     if MODEL_MIN_SAMPLES_LEAF <= 0:
         raise ValueError("model.min_samples_leaf must be greater than zero.")
+    if BACKGROUND_PER_POSITIVE <= 0:
+        raise ValueError("sampling.background_per_positive must be greater than zero.")
+    if BACKGROUND_BLOCK_SIZE_PIXELS <= 0:
+        raise ValueError("sampling.background_block_size_pixels must be greater than zero.")
+    if PREDICTION_CHUNK_SIZE <= 0:
+        raise ValueError("prediction.chunk_size_pixels must be greater than zero.")
 
 
 # Validate immediately when imported so downstream scripts can assume consistency.
