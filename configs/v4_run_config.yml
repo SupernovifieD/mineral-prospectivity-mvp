@@ -1,0 +1,84 @@
+run:
+  name: nt_mvt_v4_500m
+  random_state: 42
+  crs: EPSG:3577
+  pixel_size_m: 500
+  top_k_pcts: [1, 5, 10]
+
+data_roles:
+  label_column: label
+  feature_columns:
+    - carbonate_host
+    - lithology_carbonate
+    - lithology_chemical
+    - lithology_evaporite
+    - lithology_siliciclastic
+    - lithology_unconsolidated
+    - lithology_igneous
+    - lithology_metamorphic
+    - lithology_unknown
+    - dist_faults
+    - moho_depth
+    - lab_depth
+    - gravity
+    - gravity_hgm
+    - mag_rtp
+    - mag_hgm
+    - shape_index
+  identifier_columns:
+    - split_id
+    - x
+    - y
+    - row
+    - col
+    - sample_role
+  forbidden_feature_patterns:
+    - "^x$"
+    - "^y$"
+    - "^row$"
+    - "^col$"
+    - "lon|lat|coord|easting|northing"
+
+scaling:
+  enabled: true
+  method: standard
+  with_mean: true
+  with_std: true
+
+sampling:
+  background_per_positive: 50
+  use_spatially_stratified_background: true
+  background_block_size_pixels: 100
+
+prediction:
+  chunk_size_pixels: 200000
+
+split:
+  strategy: zone_diverse_deterministic
+  n_geographic_zones: 3
+  require_min_zone_count: 2
+  prefer_cross_zone_validation: true
+  allow_swapped_pairs: false
+  target_accepted_splits: 10
+  min_accepted_splits_for_non_exploratory: 5
+
+  use_spatial_buffer: true
+  buffer_distance_m: 10000
+  strict_area_tolerance: 0.03
+
+  strict_holdout_area: 0.10
+  strict_validation_area: 0.10
+  strict_min_holdout_positives: 3
+  strict_min_validation_positives: 3
+  strict_min_train_positives: 30
+
+  fallback_area_min: 0.08
+  fallback_area_max: 0.20
+  fallback_min_positives: 3
+
+model:
+  type: random_forest
+  n_estimators: 500
+  min_samples_leaf: 2
+  class_weight: balanced
+  n_jobs: -1
