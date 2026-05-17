@@ -1,0 +1,11 @@
+split_id,split_type,paired_split_id,split_mask,holdout_candidate_id,validation_candidate_id,holdout_zone,validation_zone,holdout_zone_name,validation_zone_name,holdout_rule,validation_rule,uses_buffer,buffer_distance_m,train_pixels,train_positives,validation_pixels,validation_positives,holdout_pixels,holdout_positives
+1,original,,data/processed/splits/split_001_mask.tif,1,20,0,1,northern,central,strict,strict,True,10000,4399036,47,529988,16,388211,5
+2,original,,data/processed/splits/split_002_mask.tif,20,1,1,0,central,northern,strict,strict,True,10000,4399036,47,388211,5,529988,16
+3,original,,data/processed/splits/split_003_mask.tif,44,1,2,0,southern,northern,strict,strict,True,10000,4374308,61,388211,5,538756,3
+4,original,,data/processed/splits/split_004_mask.tif,2,20,0,1,northern,central,strict,strict,True,10000,4386048,40,529988,16,395471,12
+5,original,,data/processed/splits/split_005_mask.tif,21,1,1,0,central,northern,strict,strict,True,10000,4374308,50,388211,5,538756,14
+6,original,,data/processed/splits/split_006_mask.tif,48,1,2,0,southern,northern,strict,strict,True,10000,4374308,61,388211,5,538756,3
+7,original,,data/processed/splits/split_007_mask.tif,3,20,0,1,northern,central,strict,strict,True,10000,4392344,41,529988,16,391227,12
+8,original,,data/processed/splits/split_008_mask.tif,23,1,1,0,central,northern,strict,strict,True,10000,4374308,56,388211,5,538756,8
+9,original,,data/processed/splits/split_009_mask.tif,49,1,2,0,southern,northern,strict,strict,True,10000,4374308,61,388211,5,538756,3
+10,original,,data/processed/splits/split_010_mask.tif,5,24,0,1,northern,central,strict,strict,True,10000,4392248,33,528346,24,388362,12

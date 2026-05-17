@@ -8,6 +8,8 @@ The initial goal is to perform machine learning on Australian portion of this da
 
 ## Run Archive
 
+- 2026-05-17 15:59:27 +0330 - Archived `v4` in `archive/v4/`: accepted original splits = 10 (non-exploratory) with holdout coverage across 3 zones (northern, central, southern) and a 10 km spatial buffer. Holdout aggregate PR-AUC (average precision, mean across splits) = 0.000724. Holdout top-area capture (mean recall across splits): top 1% = 0.1185, top 5% = 0.3863, top 10% = 0.4747. Major limitations: no probability calibration, no uncertainty map; scores are relative prospectivity rankings, not deposit probabilities.
+
 - 2026-05-14 19:38:05 +0330 - Archived `v3` in `archive/v3/`: accepted splits = 10 (non-exploratory). Holdout aggregate PR-AUC (average precision, mean across splits) = 0.000256. Holdout top-area capture (mean recall across splits): top 1% = 0.0533, top 5% = 0.4500, top 10% = 0.6000. Feature scaling method: StandardScaler. Major limitations: no spatial buffer, no probability calibration, no uncertainty map; scores are relative prospectivity rankings, not deposit probabilities.
 
 - 2026-05-13 22:01:54 +0330 - Archived `v2` in `archive/v2/`: accepted splits = 10 (non-exploratory). Holdout aggregate PR-AUC (average precision, mean across splits) = 0.000132. Holdout top-area capture (mean recall across splits): top 1% = 0.0167, top 5% = 0.3500, top 10% = 0.5500. Major limitations: no spatial buffer, no probability calibration, no uncertainty map; scores are relative prospectivity rankings, not deposit probabilities.
@@ -16,7 +18,36 @@ The initial goal is to perform machine learning on Australian portion of this da
 
 ## How Each Run Actually Executed
 
-### V3 (newest run, config-and-scaling workflow)
+### V4 (newest run, zone-diverse buffered workflow)
+
+```text
+01_make_roi_and_template.py
+  -> Built NT boundary and 500 m template mask in EPSG:3577.
+02_process_continuous_rasters.py
+  -> Aligned continuous geophysics rasters to the template.
+03_process_vector_predictors.py
+  -> Built vector-derived predictors (carbonate host, one-hot lithology classes, distance to faults).
+04_check_raster_stack.py
+  -> Verified predictor alignment and leakage checks before modeling.
+05_make_mvt_labels.py
+  -> Built MVT point layer and raster labels.
+06_make_spatial_splits.py
+  -> Generated deterministic zone-diverse spatial splits with unique holdout candidates and 10 km buffer.
+07_build_split_training_samples.py
+  -> Built per-split training samples from train regions only (50:1 background-per-positive).
+08_evaluate_random_forest_splits.py
+  -> Trained one RF per split and wrote split metrics, original-only aggregates, holdout-candidate summaries, and validation-holdout gap diagnostics.
+09_train_final_random_forest.py
+  -> Trained one final RF pipeline for screening-map production.
+10_predict_final_prospectivity.py
+  -> Predicted final NT prospectivity raster with the final RF pipeline.
+11_summarize_v4_outputs.py
+  -> Created top 1/5/10% maps and v4 review/output summary tables.
+12_write_run_manifest.py
+  -> Wrote reproducibility manifest (config snapshot, checksums, relative paths, and git commit hash).
+```
+
+### V3 (config-and-scaling workflow)
 
 ```text
 01_make_roi_and_template.py
@@ -93,4 +124,4 @@ The initial goal is to perform machine learning on Australian portion of this da
   -> Created top-5% map and output summary tables.
 ```
 
-In short: V1 was a single-split baseline flow; V2 kept most preprocessing but replaced the single model evaluation with repeated spatial split evaluation, then trained one final model for the screening map; V3 kept that evaluation-first structure and added a centralized YAML run-config plus mandatory feature scaling and explicit coordinate exclusion.
+In short: V1 was a single-split baseline flow; V2 kept most preprocessing but replaced the single model evaluation with repeated spatial split evaluation, then trained one final model for the screening map; V3 kept that evaluation-first structure and added a centralized YAML run-config plus mandatory feature scaling and explicit coordinate exclusion; V4 kept the same overall chain but changed split design to deterministic zone-diverse buffered evaluation, moved to one-hot lithology, and added mandatory gap diagnostics plus a run manifest.

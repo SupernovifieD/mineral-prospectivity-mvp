@@ -1,0 +1,9 @@
+lithology_feature,class_label
+lithology_carbonate,carbonate
+lithology_chemical,chemical
+lithology_evaporite,evaporite
+lithology_siliciclastic,siliciclastic
+lithology_unconsolidated,unconsolidated
+lithology_igneous,igneous
+lithology_metamorphic,metamorphic
+lithology_unknown,unknown
