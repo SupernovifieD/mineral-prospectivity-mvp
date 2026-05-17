@@ -1,0 +1,546 @@
+{
+  "run_name": "nt_mvt_v5_feature_ablation_500m",
+  "generated_utc": "2026-05-17T14:22:59Z",
+  "git_commit": "54b51b8243873b1b74c7f73355f5c6e8f7287f21",
+  "project_root": "/Users/yasin/mineral-prospectivity-mvp",
+  "active_config_relative_path": "configs/v5_run_config.yml",
+  "active_config": {
+    "run": {
+      "name": "nt_mvt_v5_feature_ablation_500m",
+      "random_state": 42,
+      "crs": "EPSG:3577",
+      "pixel_size_m": 500,
+      "top_k_pcts": [
+        1,
+        5,
+        10
+      ]
+    },
+    "data_roles": {
+      "label_column": "label",
+      "feature_columns": [
+        "carbonate_host",
+        "lithology_carbonate",
+        "lithology_chemical",
+        "lithology_evaporite",
+        "lithology_siliciclastic",
+        "lithology_unconsolidated",
+        "lithology_igneous",
+        "lithology_metamorphic",
+        "lithology_unknown",
+        "dist_faults",
+        "moho_depth",
+        "lab_depth",
+        "gravity",
+        "gravity_hgm",
+        "mag_rtp",
+        "mag_hgm",
+        "shape_index"
+      ],
+      "identifier_columns": [
+        "split_id",
+        "x",
+        "y",
+        "row",
+        "col",
+        "sample_role"
+      ],
+      "forbidden_feature_patterns": [
+        "^x$",
+        "^y$",
+        "^row$",
+        "^col$",
+        "lon|lat|coord|easting|northing"
+      ]
+    },
+    "scaling": {
+      "enabled": true,
+      "method": "standard",
+      "with_mean": true,
+      "with_std": true
+    },
+    "sampling": {
+      "background_per_positive": 50,
+      "use_spatially_stratified_background": true,
+      "background_block_size_pixels": 100
+    },
+    "prediction": {
+      "chunk_size_pixels": 200000
+    },
+    "split": {
+      "strategy": "zone_diverse_deterministic",
+      "n_geographic_zones": 3,
+      "require_min_zone_count": 2,
+      "prefer_cross_zone_validation": true,
+      "allow_swapped_pairs": false,
+      "target_accepted_splits": 10,
+      "min_accepted_splits_for_non_exploratory": 5,
+      "use_spatial_buffer": true,
+      "buffer_distance_m": 10000,
+      "strict_area_tolerance": 0.03,
+      "strict_holdout_area": 0.1,
+      "strict_validation_area": 0.1,
+      "strict_min_holdout_positives": 3,
+      "strict_min_validation_positives": 3,
+      "strict_min_train_positives": 30,
+      "fallback_area_min": 0.08,
+      "fallback_area_max": 0.2,
+      "fallback_min_positives": 3
+    },
+    "model": {
+      "type": "random_forest",
+      "n_estimators": 500,
+      "min_samples_leaf": 2,
+      "class_weight": "balanced",
+      "n_jobs": -1
+    },
+    "ablation": {
+      "enabled": true,
+      "baseline_experiment": "full_baseline",
+      "aggregate_reference_region": "holdout",
+      "ranking_metric": "average_precision",
+      "ranking_secondary_metrics": [
+        "top5_recall",
+        "top10_recall",
+        "ap_skill_vs_baseline"
+      ],
+      "experiments": [
+        {
+          "id": "full_baseline",
+          "label": "Full V4 feature set",
+          "mode": "include",
+          "features": [
+            "carbonate_host",
+            "lithology_carbonate",
+            "lithology_chemical",
+            "lithology_evaporite",
+            "lithology_siliciclastic",
+            "lithology_unconsolidated",
+            "lithology_igneous",
+            "lithology_metamorphic",
+            "lithology_unknown",
+            "dist_faults",
+            "moho_depth",
+            "lab_depth",
+            "gravity",
+            "gravity_hgm",
+            "mag_rtp",
+            "mag_hgm",
+            "shape_index"
+          ]
+        },
+        {
+          "id": "no_lab_depth",
+          "label": "Drop LAB depth",
+          "mode": "drop",
+          "drop_features": [
+            "lab_depth"
+          ]
+        },
+        {
+          "id": "no_deep_lithosphere",
+          "label": "Drop Moho and LAB",
+          "mode": "drop",
+          "drop_features": [
+            "moho_depth",
+            "lab_depth"
+          ]
+        },
+        {
+          "id": "geology_only",
+          "label": "Geology and faults only",
+          "mode": "include",
+          "features": [
+            "carbonate_host",
+            "lithology_carbonate",
+            "lithology_chemical",
+            "lithology_evaporite",
+            "lithology_siliciclastic",
+            "lithology_unconsolidated",
+            "lithology_igneous",
+            "lithology_metamorphic",
+            "lithology_unknown",
+            "dist_faults"
+          ]
+        },
+        {
+          "id": "geophysics_only",
+          "label": "Geophysics only",
+          "mode": "include",
+          "features": [
+            "moho_depth",
+            "lab_depth",
+            "gravity",
+            "gravity_hgm",
+            "mag_rtp",
+            "mag_hgm",
+            "shape_index"
+          ]
+        },
+        {
+          "id": "no_magnetics",
+          "label": "Drop magnetic predictors",
+          "mode": "drop",
+          "drop_features": [
+            "mag_rtp",
+            "mag_hgm"
+          ]
+        },
+        {
+          "id": "no_gravity",
+          "label": "Drop gravity-related predictors",
+          "mode": "drop",
+          "drop_features": [
+            "gravity",
+            "gravity_hgm",
+            "shape_index"
+          ]
+        },
+        {
+          "id": "no_lithology_onehot",
+          "label": "Drop detailed one-hot lithology",
+          "mode": "drop",
+          "drop_features": [
+            "lithology_carbonate",
+            "lithology_chemical",
+            "lithology_evaporite",
+            "lithology_siliciclastic",
+            "lithology_unconsolidated",
+            "lithology_igneous",
+            "lithology_metamorphic",
+            "lithology_unknown"
+          ]
+        },
+        {
+          "id": "carbonate_fault_only",
+          "label": "Carbonate host plus fault distance only",
+          "mode": "include",
+          "features": [
+            "carbonate_host",
+            "dist_faults"
+          ]
+        }
+      ]
+    }
+  },
+  "claims_language": [
+    "Scores are relative prospectivity rankings, not calibrated deposit probabilities.",
+    "Holdout evidence comes from split evaluation, not from the final production model.",
+    "V5 compares feature subsets under fixed V4 conditions; it does not prove geological causality.",
+    "Ablation results are screening evidence only and should be interpreted with geological judgment."
+  ],
+  "artifacts": [
+    {
+      "label": "run_config",
+      "relative_path": "configs/v5_run_config.yml",
+      "exists": true,
+      "size_bytes": 4151,
+      "modified_utc": "2026-05-17T13:12:32Z",
+      "sha256": "df4df21e5c973843691dec9c4f8eb354337cba3097e3eae5da49f99a789a49bf"
+    },
+    {
+      "label": "run_config_snapshot",
+      "relative_path": "outputs/tables/v5_run_config_snapshot.yml",
+      "exists": true,
+      "size_bytes": 3786,
+      "modified_utc": "2026-05-17T14:22:59Z",
+      "sha256": "a90bac9821a4ea043586fb833ede6fadfe63f40eaff78799cf26f7c1e156bb7c"
+    },
+    {
+      "label": "nt_mask_500m",
+      "relative_path": "data/processed/roi/nt_mask_500m.tif",
+      "exists": true,
+      "size_bytes": 166470,
+      "modified_utc": "2026-05-17T13:56:07Z",
+      "sha256": "4c3207dfd922592f6f264b915fafbecbc2710b24ff0783870608821f60fcd50a"
+    },
+    {
+      "label": "mvt_labels_500m",
+      "relative_path": "data/processed/labels/mvt_labels_500m.tif",
+      "exists": true,
+      "size_bytes": 127021,
+      "modified_utc": "2026-05-17T14:04:26Z",
+      "sha256": "2077bc6b40ed48c9fdaa83e2a27974d93abae009d845bde3406be97708f2ce65"
+    },
+    {
+      "label": "split_summary",
+      "relative_path": "data/processed/splits/split_summary.csv",
+      "exists": true,
+      "size_bytes": 1663,
+      "modified_utc": "2026-05-17T14:06:37Z",
+      "sha256": "256a885d11a6d979b3da058c8927aa8e0a3c9d084cb893d5f5a41ac9811a852c"
+    },
+    {
+      "label": "candidate_blocks",
+      "relative_path": "data/processed/splits/candidate_blocks.csv",
+      "exists": true,
+      "size_bytes": 14023,
+      "modified_utc": "2026-05-17T14:06:37Z",
+      "sha256": "441e1580fd49ab8609c4cdc2d26b5f1cd0c429f880322cbe7e071b3be108e07a"
+    },
+    {
+      "label": "split_training_samples",
+      "relative_path": "data/processed/models/split_training_samples.csv",
+      "exists": true,
+      "size_bytes": 4202029,
+      "modified_utc": "2026-05-17T14:08:16Z",
+      "sha256": "e296ca53f1c5570c7bc4835764cace9f9cd865ebcd9bc85533ce429b7b7bf279"
+    },
+    {
+      "label": "feature_ablation_metrics_by_split",
+      "relative_path": "data/processed/models/feature_ablation_metrics_by_split.csv",
+      "exists": true,
+      "size_bytes": 106353,
+      "modified_utc": "2026-05-17T14:20:45Z",
+      "sha256": "9764374ea1f41b0adaa944557614988ec8eb80ecbded4e7fa86552c33217c5e8"
+    },
+    {
+      "label": "feature_ablation_aggregate_metrics",
+      "relative_path": "data/processed/models/feature_ablation_aggregate_metrics.csv",
+      "exists": true,
+      "size_bytes": 51762,
+      "modified_utc": "2026-05-17T14:20:45Z",
+      "sha256": "2ed57f8653815ad7b4d56e42b8a54d6edf4b6a4aabdca54b7d0daae516a032e9"
+    },
+    {
+      "label": "feature_ablation_by_holdout_candidate",
+      "relative_path": "data/processed/models/feature_ablation_by_holdout_candidate.csv",
+      "exists": true,
+      "size_bytes": 28161,
+      "modified_utc": "2026-05-17T14:20:45Z",
+      "sha256": "005fe9d5b88891646b53dae7969a6ffad7631232a7ac6da818d99556fc142e1d"
+    },
+    {
+      "label": "feature_ablation_delta_vs_baseline",
+      "relative_path": "data/processed/models/feature_ablation_delta_vs_baseline.csv",
+      "exists": true,
+      "size_bytes": 48921,
+      "modified_utc": "2026-05-17T14:20:46Z",
+      "sha256": "a8bf80d55c8c03c5e5f309330a1b82c073674ff3dba82771332999e2e3ef0897"
+    },
+    {
+      "label": "feature_ablation_validation_holdout_gap",
+      "relative_path": "data/processed/models/feature_ablation_validation_holdout_gap.csv",
+      "exists": true,
+      "size_bytes": 18539,
+      "modified_utc": "2026-05-17T14:20:45Z",
+      "sha256": "c26a3e76b2b72c9f0bddf831ac1435ffb94a3940435e9f6435eb09cb9949c3c9"
+    },
+    {
+      "label": "feature_ablation_ranked_summary",
+      "relative_path": "outputs/tables/feature_ablation_ranked_summary.csv",
+      "exists": true,
+      "size_bytes": 1982,
+      "modified_utc": "2026-05-17T14:20:46Z",
+      "sha256": "5a098581046a0c97a068ada243981803d473e87d5d6325410b28aeb149044e32"
+    },
+    {
+      "label": "final_training_table",
+      "relative_path": "data/processed/models/final_training_table.csv",
+      "exists": true,
+      "size_bytes": 544820,
+      "modified_utc": "2026-05-17T14:21:26Z",
+      "sha256": "5e51efdf69f07daa692d5a2c66f8a54cb3fdba88accac82fb4cf5935865b64d6"
+    },
+    {
+      "label": "final_model",
+      "relative_path": "data/processed/models/final_random_forest_mvt.joblib",
+      "exists": true,
+      "size_bytes": 4980754,
+      "modified_utc": "2026-05-17T14:21:28Z",
+      "sha256": "5b8a87b5e4950e60952b5657b0468a71a6a71f587065a23416f2b8abc78c883f"
+    },
+    {
+      "label": "final_feature_importance",
+      "relative_path": "data/processed/models/final_feature_importance.csv",
+      "exists": true,
+      "size_bytes": 574,
+      "modified_utc": "2026-05-17T14:21:29Z",
+      "sha256": "d66acca197c15af808d8a466a666aedf185f284c94c70dcff31fd3daeeda2265"
+    },
+    {
+      "label": "final_prospectivity_map",
+      "relative_path": "outputs/maps/mvt_prospectivity_rf_v5_500m.tif",
+      "exists": true,
+      "size_bytes": 14525935,
+      "modified_utc": "2026-05-17T14:22:39Z",
+      "sha256": "a346861cab2e1942fe5d30cddd3c8beb34310d2191e441f5cf2c466b3be31538"
+    },
+    {
+      "label": "final_score_summary",
+      "relative_path": "outputs/tables/final_score_summary_v5.csv",
+      "exists": true,
+      "size_bytes": 214,
+      "modified_utc": "2026-05-17T14:22:49Z",
+      "sha256": "5ef7860177575a4479c86531164daa680bba92a5e75df7ec2d8ecf479f3c370e"
+    },
+    {
+      "label": "model_review_report",
+      "relative_path": "outputs/tables/v5_model_review.txt",
+      "exists": true,
+      "size_bytes": 4625,
+      "modified_utc": "2026-05-17T14:22:49Z",
+      "sha256": "b18b6a0d25379f0ee699ec18b99751ed6910a42b53eb5a4539c3337627f9a9f5"
+    },
+    {
+      "label": "predictor_carbonate_host",
+      "relative_path": "data/processed/rasters_500m/carbonate_host_500m.tif",
+      "exists": true,
+      "size_bytes": 220848,
+      "modified_utc": "2026-05-17T14:00:58Z",
+      "sha256": "6c2791e177eeafe93a4e000fd215f5bb8f77f7ecf68f2a54e4f50421ba02eaa3"
+    },
+    {
+      "label": "predictor_lithology_carbonate",
+      "relative_path": "data/processed/rasters_500m/lithology_carbonate_500m.tif",
+      "exists": true,
+      "size_bytes": 220848,
+      "modified_utc": "2026-05-17T14:00:59Z",
+      "sha256": "6c2791e177eeafe93a4e000fd215f5bb8f77f7ecf68f2a54e4f50421ba02eaa3"
+    },
+    {
+      "label": "predictor_lithology_chemical",
+      "relative_path": "data/processed/rasters_500m/lithology_chemical_500m.tif",
+      "exists": true,
+      "size_bytes": 127226,
+      "modified_utc": "2026-05-17T14:00:59Z",
+      "sha256": "9775df0ae3126daa4933ba69c9689158e1820e244962ce5fbbd7f445b9ca0490"
+    },
+    {
+      "label": "predictor_lithology_evaporite",
+      "relative_path": "data/processed/rasters_500m/lithology_evaporite_500m.tif",
+      "exists": true,
+      "size_bytes": 126925,
+      "modified_utc": "2026-05-17T14:00:59Z",
+      "sha256": "4fe359dba45cc51c7560a48c1e0930efe7c1ec34b1b6ad52b3b783a6aea56e3c"
+    },
+    {
+      "label": "predictor_lithology_siliciclastic",
+      "relative_path": "data/processed/rasters_500m/lithology_siliciclastic_500m.tif",
+      "exists": true,
+      "size_bytes": 319114,
+      "modified_utc": "2026-05-17T14:01:02Z",
+      "sha256": "0b328ad72f54cd175dfec47c3ab02dad90e2931f112f4d0048e92579dffcf15a"
+    },
+    {
+      "label": "predictor_lithology_unconsolidated",
+      "relative_path": "data/processed/rasters_500m/lithology_unconsolidated_500m.tif",
+      "exists": true,
+      "size_bytes": 346423,
+      "modified_utc": "2026-05-17T14:01:11Z",
+      "sha256": "fac400e4ff4489057462fcdd74b4ac5589c2f295b1b8693f4292f3ce9f3c59fe"
+    },
+    {
+      "label": "predictor_lithology_igneous",
+      "relative_path": "data/processed/rasters_500m/lithology_igneous_500m.tif",
+      "exists": true,
+      "size_bytes": 200505,
+      "modified_utc": "2026-05-17T14:01:12Z",
+      "sha256": "5821514432dc84c2bbd07889767d1cd78e8fdf3e46b05a0a0bf74f051a66500f"
+    },
+    {
+      "label": "predictor_lithology_metamorphic",
+      "relative_path": "data/processed/rasters_500m/lithology_metamorphic_500m.tif",
+      "exists": true,
+      "size_bytes": 146926,
+      "modified_utc": "2026-05-17T14:01:12Z",
+      "sha256": "a279252fa1a8d70d23f27dbb5b79d0cf46b277df5560563e45f8f5e38588b2f1"
+    },
+    {
+      "label": "predictor_lithology_unknown",
+      "relative_path": "data/processed/rasters_500m/lithology_unknown_500m.tif",
+      "exists": true,
+      "size_bytes": 127066,
+      "modified_utc": "2026-05-17T14:01:13Z",
+      "sha256": "88159bc142dac222844ff31da25c343647f2d4a38b50f7026f7e0a981f87558c"
+    },
+    {
+      "label": "predictor_dist_faults",
+      "relative_path": "data/processed/rasters_500m/dist_faults_500m.tif",
+      "exists": true,
+      "size_bytes": 17000054,
+      "modified_utc": "2026-05-17T14:03:17Z",
+      "sha256": "e8ff61f82c9ebbe720b96c025765224bb658e26e78dea6e0a9702dfdadfbf6fc"
+    },
+    {
+      "label": "predictor_moho_depth",
+      "relative_path": "data/processed/rasters_500m/moho_depth_500m.tif",
+      "exists": true,
+      "size_bytes": 21911695,
+      "modified_utc": "2026-05-17T13:56:16Z",
+      "sha256": "37d970ca50aaa6c3b94d2d43d42e7245cda5bd7217962ae75c24f3134b379922"
+    },
+    {
+      "label": "predictor_lab_depth",
+      "relative_path": "data/processed/rasters_500m/lab_depth_500m.tif",
+      "exists": true,
+      "size_bytes": 21075372,
+      "modified_utc": "2026-05-17T13:56:17Z",
+      "sha256": "5a7afa2db63b85e8a9006216ec8eb12238d4f82f7c1b0aa585f4dd29ab71869c"
+    },
+    {
+      "label": "predictor_gravity",
+      "relative_path": "data/processed/rasters_500m/gravity_500m.tif",
+      "exists": true,
+      "size_bytes": 25731857,
+      "modified_utc": "2026-05-17T13:56:18Z",
+      "sha256": "9c462d3b696916d5014a81cfcac35b954d4196497c7af7a0cc5d7f96f25e709e"
+    },
+    {
+      "label": "predictor_gravity_hgm",
+      "relative_path": "data/processed/rasters_500m/gravity_hgm_500m.tif",
+      "exists": true,
+      "size_bytes": 24973405,
+      "modified_utc": "2026-05-17T13:56:19Z",
+      "sha256": "34f0e89448de44bc418ba25d5f1e96a7761934fe657887e3dbcfd08d8eea1e45"
+    },
+    {
+      "label": "predictor_mag_rtp",
+      "relative_path": "data/processed/rasters_500m/mag_rtp_500m.tif",
+      "exists": true,
+      "size_bytes": 23563114,
+      "modified_utc": "2026-05-17T13:56:22Z",
+      "sha256": "1258777001b046a5cc75379bbef6326a1c234d54008c8895923cef61cc89e05a"
+    },
+    {
+      "label": "predictor_mag_hgm",
+      "relative_path": "data/processed/rasters_500m/mag_hgm_500m.tif",
+      "exists": true,
+      "size_bytes": 24826910,
+      "modified_utc": "2026-05-17T13:56:23Z",
+      "sha256": "3294c1542d1f2adcd0781389298ab183d980f46759aab6342502640a6d4974a0"
+    },
+    {
+      "label": "predictor_shape_index",
+      "relative_path": "data/processed/rasters_500m/shape_index_500m.tif",
+      "exists": true,
+      "size_bytes": 24395166,
+      "modified_utc": "2026-05-17T13:56:24Z",
+      "sha256": "802d05bbc01db10951202d3d61334b68a8dedc54d6cb752a2a2ab4087e51a0a9"
+    },
+    {
+      "label": "top_1_percent_map",
+      "relative_path": "outputs/maps/mvt_top_1_percent_rf_v5_500m.tif",
+      "exists": false,
+      "size_bytes": null,
+      "modified_utc": null,
+      "sha256": null
+    },
+    {
+      "label": "top_5_percent_map",
+      "relative_path": "outputs/maps/mvt_top_5_percent_rf_v5_500m.tif",
+      "exists": false,
+      "size_bytes": null,
+      "modified_utc": null,
+      "sha256": null
+    },
+    {
+      "label": "top_10_percent_map",
+      "relative_path": "outputs/maps/mvt_top_10_percent_rf_v5_500m.tif",
+      "exists": false,
+      "size_bytes": null,
+      "modified_utc": null,
+      "sha256": null
+    }
+  ]
+}

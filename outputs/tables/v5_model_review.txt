@@ -1,0 +1,65 @@
+Run: nt_mvt_v5_feature_ablation_500m
+Objective: feature ablation study
+Model family: Random Forest only
+Pixel size: 500 m
+CRS: EPSG:3577
+Spatial buffer: enabled (10000 m)
+Background sampling: 50:1 (spatially stratified=True)
+Ablation experiments: 9
+
+Fixed V4 conditions kept in V5:
+- Same study area (Northern Territory), 500 m grid, EPSG:3577
+- Same MVT label logic and predictor raster inventory
+- Same split generator and 10 km buffer
+- Same 50:1 spatially stratified background sampling
+- Same StandardScaler + RandomForest hyperparameter recipe
+
+Ablation experiment table:
+- full_baseline: mode=include, feature_count=17, drop=none, question=Reference experiment using full V4 feature set.
+- no_lab_depth: mode=drop, feature_count=16, drop=lab_depth, question=Does LAB depth improve or hurt holdout performance?
+- no_deep_lithosphere: mode=drop, feature_count=15, drop=moho_depth,lab_depth, question=Do deep-earth proxies (Moho + LAB) help or add noise?
+- geology_only: mode=include, feature_count=10, drop=moho_depth,lab_depth,gravity,gravity_hgm,mag_rtp,mag_hgm,shape_index, question=How far geology + faults can go without geophysics.
+- geophysics_only: mode=include, feature_count=7, drop=carbonate_host,lithology_carbonate,lithology_chemical,lithology_evaporite,lithology_siliciclastic,lithology_unconsolidated,lithology_igneous,lithology_metamorphic,lithology_unknown,dist_faults, question=Whether geophysics has independent predictive signal.
+- no_magnetics: mode=drop, feature_count=15, drop=mag_rtp,mag_hgm, question=Do magnetic predictors improve holdout discrimination?
+- no_gravity: mode=drop, feature_count=14, drop=gravity,gravity_hgm,shape_index, question=Do gravity-related predictors improve holdout discrimination?
+- no_lithology_onehot: mode=drop, feature_count=9, drop=lithology_carbonate,lithology_chemical,lithology_evaporite,lithology_siliciclastic,lithology_unconsolidated,lithology_igneous,lithology_metamorphic,lithology_unknown, question=Does detailed one-hot lithology add value beyond carbonate host?
+- carbonate_fault_only: mode=include, feature_count=2, drop=lithology_carbonate,lithology_chemical,lithology_evaporite,lithology_siliciclastic,lithology_unconsolidated,lithology_igneous,lithology_metamorphic,lithology_unknown,moho_depth,lab_depth,gravity,gravity_hgm,mag_rtp,mag_hgm,shape_index, question=Simple mineral-system baseline using host + fault distance.
+
+Main ranking (holdout region, metric=average_precision):
+- rank 1: full_baseline (AP=0.000724, AP-skill=45.73, top5=0.386, top10=0.475)
+- rank 2: no_lithology_onehot (AP=0.000521, AP-skill=27.02, top5=0.251, top10=0.440)
+- rank 3: no_gravity (AP=0.000372, AP-skill=21.32, top5=0.354, top10=0.467)
+- rank 4: no_magnetics (AP=0.000367, AP-skill=24.94, top5=0.314, top10=0.432)
+- rank 5: geology_only (AP=0.000342, AP-skill=27.01, top5=0.335, top10=0.440)
+- rank 6: geophysics_only (AP=0.000239, AP-skill=9.13, top5=0.079, top10=0.196)
+- rank 7: no_deep_lithosphere (AP=0.000231, AP-skill=16.63, top5=0.390, top10=0.523)
+- rank 8: no_lab_depth (AP=0.000189, AP-skill=14.27, top5=0.346, top10=0.505)
+- rank 9: carbonate_fault_only (AP=0.000187, AP-skill=14.34, top5=0.310, top10=0.330)
+
+Best and worst experiment snapshot:
+- Best: full_baseline (delta AP vs baseline=0.000000)
+- Worst: carbonate_fault_only (delta AP vs baseline=-0.000537)
+
+Validation-vs-holdout gap summary:
+- Mean AP gap ratio (validation/holdout): 4.455x
+- Median AP gap ratio (validation/holdout): 1.693x
+
+Delta-vs-baseline interpretation guidance:
+- Small improvements may be non-meaningful when split variance is high.
+- Do not remove a feature group based on one metric alone.
+- Prefer subsets that improve holdout AP and top-k recall without worsening validation-holdout gap.
+- Validation-up but holdout-down should be treated as potential geography-specific overfitting.
+
+Mandatory claim limits:
+- Scores are relative prospectivity rankings, not calibrated deposit probabilities.
+- Holdout evidence comes from split evaluation, not from the final production model.
+- V5 compares feature subsets under fixed V4 conditions; it does not prove geological causality.
+- Ablation results are screening evidence only and should be interpreted with geological judgment.
+
+Key artifacts:
+- data/processed/models/feature_ablation_metrics_by_split.csv
+- data/processed/models/feature_ablation_aggregate_metrics.csv
+- data/processed/models/feature_ablation_by_holdout_candidate.csv
+- data/processed/models/feature_ablation_delta_vs_baseline.csv
+- data/processed/models/feature_ablation_validation_holdout_gap.csv
+- outputs/tables/feature_ablation_ranked_summary.csv
